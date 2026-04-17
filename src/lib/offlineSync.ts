@@ -38,13 +38,17 @@ export const syncOfflineData = async () => {
 
   for (const record of unsynced) {
     try {
-      let photoUrl = '';
-      if (record.photoBase64) {
-        // Upload photo to storage first
-        const filename = `matrices/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-        const storageRef = ref(storage, filename);
-        const snapshot = await uploadString(storageRef, record.photoBase64, 'data_url');
-        photoUrl = await getDownloadURL(snapshot.ref);
+      let photoUrls: string[] = [];
+      if (record.photoBase64s && record.photoBase64s.length > 0) {
+        // Upload each photo to storage
+        for (let i = 0; i < record.photoBase64s.length; i++) {
+          const base64 = record.photoBase64s[i];
+          const filename = `matrices/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+          const storageRef = ref(storage, filename);
+          const snapshot = await uploadString(storageRef, base64, 'data_url');
+          const url = await getDownloadURL(snapshot.ref);
+          photoUrls.push(url);
+        }
       }
 
       // Add to Firestore
@@ -55,7 +59,7 @@ export const syncOfflineData = async () => {
         lat: record.lat,
         lng: record.lng,
         notes: record.notes,
-        photos: photoUrl ? [photoUrl] : [],
+        photos: photoUrls,
         createdAt: serverTimestamp(),
         revisitDate: record.revisitDate,
         teamId: record.teamId

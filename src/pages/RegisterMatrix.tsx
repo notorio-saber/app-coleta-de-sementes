@@ -21,7 +21,7 @@ export function RegisterMatrix() {
     revisitDays: '30'
   });
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const handleCaptureLocation = () => {
     if ('geolocation' in navigator) {
@@ -44,13 +44,19 @@ export function RegisterMatrix() {
 
   const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && photos.length < 3) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhoto(reader.result as string);
+        setPhotos([...photos, reader.result as string]);
       };
       reader.readAsDataURL(file);
+    } else if (photos.length >= 3) {
+      alert("Máximo de 3 fotos atingido.");
     }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,17 +81,20 @@ export function RegisterMatrix() {
       lng: location.lng,
       revisitDate: revisitDate.toISOString(),
       teamId: activeTeam.id,
-      photoBase64: photo
+      photoBase64s: photos
     };
 
     try {
       if (navigator.onLine) {
-        let photoUrl = '';
-        if (photo) {
-          const filename = `matrices/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-          const storageRef = ref(storage, filename);
-          const snapshot = await uploadString(storageRef, photo, 'data_url');
-          photoUrl = await getDownloadURL(snapshot.ref);
+        let photoUrls: string[] = [];
+        if (photos.length > 0) {
+          for (let i = 0; i < photos.length; i++) {
+            const filename = `matrices/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            const storageRef = ref(storage, filename);
+            const snapshot = await uploadString(storageRef, photos[i], 'data_url');
+            const url = await getDownloadURL(snapshot.ref);
+            photoUrls.push(url);
+          }
         }
 
         await addDoc(collection(db, 'matrices'), {
@@ -95,7 +104,7 @@ export function RegisterMatrix() {
           lat: location.lat,
           lng: location.lng,
           notes: formData.notes,
-          photos: photoUrl ? [photoUrl] : [],
+          photos: photoUrls,
           createdAt: serverTimestamp(),
           revisitDate: revisitDate.toISOString(),
           teamId: activeTeam.id
@@ -180,7 +189,7 @@ export function RegisterMatrix() {
         </div>
 
         <div className="input-group">
-          <label>Foto da Matriz</label>
+          <label>Fotos da Matriz (Máx 3)</label>
           <input 
             type="file" 
             accept="image/*" 
@@ -189,16 +198,23 @@ export function RegisterMatrix() {
             ref={fileInputRef}
             onChange={handlePhotoCapture}
           />
-          {photo ? (
-            <div style={{ position: 'relative' }}>
-              <img src={photo} alt="Preview" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: 'var(--border-radius-sm)' }} />
-              <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current?.click()} style={{ marginTop: '0.5rem' }}>
-                Refazer Foto
-              </button>
-            </div>
-          ) : (
+          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', marginBottom: '0.5rem' }}>
+            {photos.map((p, idx) => (
+              <div key={idx} style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0 }}>
+                <img src={p} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--border-radius-sm)' }} />
+                <button 
+                  type="button" 
+                  onClick={() => removePhoto(idx)} 
+                  style={{ position: 'absolute', top: 0, right: 0, backgroundColor: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer' }}
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+          {photos.length < 3 && (
             <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
-              <Camera size={18} /> Tirar Foto
+              <Camera size={18} /> Adicionar Foto
             </button>
           )}
         </div>
