@@ -57,8 +57,8 @@ export function MapView() {
     <div style={{ height: 'calc(100vh - 140px)', width: '100%', borderRadius: 'var(--border-radius-md)', overflow: 'hidden' }}>
       <MapContainer center={center} zoom={matrices.length > 0 ? 12 : 4} style={{ height: '100%', width: '100%' }}>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         {matrices.map(matrix => {
           let isUrgent = false;
@@ -76,30 +76,29 @@ export function MapView() {
               icon={isUrgent ? redTreeIcon : treeIcon}
             >
               <Popup>
-                <div style={{ minWidth: '160px' }}>
+                <div style={{ minWidth: '160px', padding: '0.25rem' }}>
                   {matrix.photos && matrix.photos.length > 0 && (
-                    <div style={{ width: '100%', height: '80px', marginBottom: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '100px', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden' }}>
                       <img src={matrix.photos[0]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Matriz" />
                     </div>
                   )}
-                  <h3 style={{ margin: '0 0 5px 0', fontSize: '1rem' }}>{matrix.commonName}</h3>
-                  <p style={{ margin: '0 0 5px 0', fontSize: '11px', fontStyle: 'italic', color: '#666' }}>{matrix.scientificName}</p>
-                  <p style={{ margin: '0', fontSize: '12px' }}><strong>Estádio:</strong> {matrix.fruitingStage}</p>
+                  <h3 style={{ margin: '0 0 5px 0', fontSize: '1.05rem', color: 'var(--text-main)' }}>{matrix.commonName}</h3>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-muted)' }}>{matrix.scientificName}</p>
+                  
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+                     <span style={{ fontSize: '0.7rem', color: isUrgent ? 'var(--danger-color)' : 'var(--success-color)', fontWeight: 500, padding: '2px 6px', background: isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', borderRadius: '4px' }}>{matrix.fruitingStage}</span>
+                  </div>
                   
                   {matrix.revisitDate && (
-                    <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: isUrgent ? 'var(--danger-color)' : 'inherit' }}>
-                      <strong>Revisita:</strong> {new Date(matrix.revisitDate).toLocaleDateString()}
+                    <p style={{ margin: '5px 0 0 0', fontSize: '0.75rem', color: isUrgent ? 'var(--danger-color)' : 'var(--text-muted)' }}>
+                      <strong>Prazo limite:</strong> {new Date(matrix.revisitDate).toLocaleDateString()}
                     </p>
                   )}
 
                   <button 
                     onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
-                    style={{ 
-                      marginTop: '10px', width: '100%', padding: '6px', 
-                      backgroundColor: 'var(--primary-color)', color: 'white', 
-                      border: 'none', borderRadius: '4px', cursor: 'pointer',
-                      fontSize: '12px', fontWeight: 'bold'
-                    }}
+                    className="btn btn-primary"
+                    style={{ marginTop: '12px', padding: '0.5rem 1rem', width: '100%', borderRadius: '12px', color: 'white', fontWeight: 600, fontSize: '0.8rem' }}
                   >
                     Obter Rota
                   </button>

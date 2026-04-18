@@ -8,7 +8,7 @@ export function Layout() {
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        padding: '0.8rem 1rem', 
+        padding: '1.2rem 1.25rem', 
         backgroundColor: 'rgba(5, 5, 5, 0.8)', 
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
@@ -17,9 +17,9 @@ export function Layout() {
         top: 0,
         zIndex: 1000
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <img src="/logo.png" alt="Mascote" style={{ height: '32px', objectFit: 'contain' }} />
-          <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary-color)' }}>SeedDesk</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <img src="/logo.png" alt="Mascote" style={{ height: '40px', width: '40px', objectFit: 'contain', borderRadius: '15px', backgroundColor: 'var(--surface-elevated)' }} />
+          <h1 style={{ fontSize: '1.3rem', margin: 0, color: 'var(--primary-color)' }}>SeedDesk</h1>
         </div>
         <NavLink to="/alerts" style={{ color: 'var(--text-muted)' }}>
            <Bell size={24} />

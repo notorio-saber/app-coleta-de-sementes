@@ -274,3 +274,17 @@ h3 { font-size: 1.125rem; font-family: var(--font-sans); font-weight: 500; lette
 .nav-item svg {
   width: 22px; height: 22px;
 }
+
+ /* Leaflet Dark UI Overrides */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-main) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  border: 1px solid var(--border-color) !important;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--text-muted) !important;
+}
