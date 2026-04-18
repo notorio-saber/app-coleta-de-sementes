@@ -56,9 +56,9 @@ export function Dashboard() {
           const data = doc.data();
           if (data.date) {
              const hDate = new Date(data.date);
-             // handle timezone shift by extracting purely the year/month strings or using UTC logic
              if (hDate.getUTCMonth() === currentMonth && hDate.getUTCFullYear() === currentYear) {
-                collectedThisMonth += (data.totalKg || 0);
+                // Now monthly goal applies ONLY to benefited/processed seeds
+                collectedThisMonth += (data.benefitedTotalKg || 0);
              }
           }
         });
@@ -109,8 +109,8 @@ export function Dashboard() {
           {/* Meta Mensal de Produção */}
           <div className="card" style={{ marginTop: '1rem', borderTop: '4px solid goldenrod' }}>
             <h2 style={{ fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Progressão Mesal (Kg)</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mês vigente</span>
+              <span>Sucesso do Beneficiamento (Kg)</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Semente Líquida (Mês)</span>
             </h2>
             
             {activeTeam.monthlyGoalKg && activeTeam.monthlyGoalKg > 0 ? (

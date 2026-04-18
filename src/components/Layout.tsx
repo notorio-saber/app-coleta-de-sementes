@@ -1,7 +1,10 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, Map as MapIcon, Navigation, Archive, Settings, Bell, ClipboardList } from 'lucide-react';
+import { Home, Map as MapIcon, Navigation, Archive, Settings, Bell, ClipboardList, FlaskConical } from 'lucide-react';
+import { useTeam } from '../context/TeamContext';
 
 export function Layout() {
+  const { userRole } = useTeam();
+  
   return (
     <div className="app-container">
       <header style={{ 
@@ -40,18 +43,31 @@ export function Layout() {
           <Home />
           <span>Início</span>
         </NavLink>
-        <NavLink to="/coletas" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <ClipboardList />
-          <span>Coletas</span>
-        </NavLink>
-        <NavLink to="/map" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <MapIcon />
-          <span>Mapa</span>
-        </NavLink>
-        <NavLink to="/routes" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Navigation />
-          <span>Rotas</span>
-        </NavLink>
+        
+        {(userRole === 'admin' || userRole === 'coletor') && (
+          <>
+            <NavLink to="/coletas" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <ClipboardList />
+              <span>Coletas</span>
+            </NavLink>
+            <NavLink to="/map" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <MapIcon />
+              <span>Mapa</span>
+            </NavLink>
+            <NavLink to="/routes" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Navigation />
+              <span>Rotas</span>
+            </NavLink>
+          </>
+        )}
+
+        {(userRole === 'admin' || userRole === 'beneficiador') && (
+          <NavLink to="/processing" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <FlaskConical />
+            <span>Lab</span>
+          </NavLink>
+        )}
+        
         <NavLink to="/matrices" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Archive />
           <span>Acervo</span>

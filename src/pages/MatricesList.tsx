@@ -55,10 +55,11 @@ export function MatricesList() {
   const handleExportCSV = () => {
     if (matrices.length === 0) return;
 
-    const headers = ['Nome Comum', 'Nome Científico', 'Latitude', 'Longitude', 'Estádio Frutificação', 'Criado Por'];
+    const headers = ['Registro', 'Nome Comum', 'Nome Científico', 'Latitude', 'Longitude', 'Estádio Frutificação', 'Criado Por'];
     const csvContent = [
       headers.join(','),
       ...matrices.map(m => [
+        `"${m.matrixCode || 'N/D'}"`,
         `"${m.commonName || ''}"`,
         `"${m.scientificName || ''}"`,
         m.lat,
@@ -183,7 +184,10 @@ export function MatricesList() {
                     
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <h3 style={{ fontSize: '1rem', margin: '0 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <h3 style={{ fontSize: '1rem', margin: '0 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
+                         {matrix.matrixCode && <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{matrix.matrixCode}</span>}
+                      </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                         <p style={{ margin: '0', fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.scientificName}</p>
                         <span style={{ fontSize: '0.7rem', color: statusColor, fontWeight: 500, padding: '2px 6px', background: `${statusColor}15`, borderRadius: '4px' }}>{matrix.fruitingStage}</span>

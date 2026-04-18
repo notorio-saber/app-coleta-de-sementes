@@ -77,12 +77,15 @@ export function RegisterMatrix() {
     const revisitDate = new Date();
     revisitDate.setDate(revisitDate.getDate() + parseInt(formData.revisitDays));
 
+    const generatedCode = `#MZ-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
     const payload = {
       ...formData,
       lat: location.lat,
       lng: location.lng,
       revisitDate: revisitDate.toISOString(),
       teamId: activeTeam.id,
+      matrixCode: generatedCode,
       creatorId: user?.uid,
       creatorEmail: user?.email,
       photoBase64s: photos
@@ -109,6 +112,7 @@ export function RegisterMatrix() {
           lng: location.lng,
           notes: formData.notes,
           photos: photoUrls,
+          matrixCode: generatedCode,
           createdAt: serverTimestamp(),
           revisitDate: revisitDate.toISOString(),
           teamId: activeTeam.id,

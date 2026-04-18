@@ -125,9 +125,10 @@ export function Collections() {
   const chartData = [...harvests].reverse().reduce((acc: any[], curr) => {
     const existing = acc.find(x => x.date === curr.date);
     if (existing) {
-      existing.kg += curr.totalKg;
+      existing.bruto += curr.totalKg;
+      existing.liquido += (curr.benefitedTotalKg || 0);
     } else {
-      acc.push({ date: curr.date, kg: curr.totalKg });
+      acc.push({ date: curr.date, bruto: curr.totalKg, liquido: curr.benefitedTotalKg || 0 });
     }
     return acc;
   }, []);
@@ -207,7 +208,11 @@ export function Collections() {
              <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
-                    <linearGradient id="colorKg" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="colorBruto" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--text-muted)" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="var(--text-muted)" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorLiquido" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.4}/>
                       <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0}/>
                     </linearGradient>
@@ -215,7 +220,8 @@ export function Collections() {
                   <XAxis dataKey="date" tick={{fontSize: 10, fill: 'var(--text-muted)'}} />
                   <YAxis tick={{fontSize: 10, fill: 'var(--text-muted)'}} />
                   <Tooltip contentStyle={{ backgroundColor: 'var(--surface-color)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
-                  <Area type="monotone" dataKey="kg" stroke="var(--primary-color)" fillOpacity={1} fill="url(#colorKg)" />
+                  <Area type="monotone" name="Bruto (Campo)" dataKey="bruto" stroke="var(--text-muted)" fillOpacity={1} fill="url(#colorBruto)" />
+                  <Area type="monotone" name="Líquido (Lab)" dataKey="liquido" stroke="var(--primary-color)" fillOpacity={1} fill="url(#colorLiquido)" />
                 </AreaChart>
              </ResponsiveContainer>
            </div>
@@ -234,18 +240,27 @@ export function Collections() {
              <div key={h.id || i} className="card animate-entry" style={{ animationDelay: `${i * 50}ms` }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
                  <span style={{ fontWeight: 'bold' }}>{new Date(h.date).toLocaleDateString()}</span>
-                 <span style={{ color: 'var(--primary-light)', fontWeight: 'bold' }}>+{h.totalKg.toFixed(1)} Kg</span>
+                 <div style={{ textAlign: 'right' }}>
+                   <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Bruto (Campo): {h.totalKg.toFixed(1)} Kg</div>
+                   <div style={{ color: 'var(--primary-light)', fontWeight: 'bold' }}>
+                     Processado: {h.benefitedTotalKg !== undefined ? h.benefitedTotalKg.toFixed(1) : '0.0'} Kg
+                   </div>
+                 </div>
                </div>
                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                 Por: {h.operatorEmail}
+                 Operador Rota: {h.operatorEmail.split('@')[0]}
+                 {h.processedBy && <><br/>Laboratório: {h.processedBy.split('@')[0]}</>}
                </div>
                <div style={{ marginTop: '0.5rem' }}>
-                 {h.items.map((item: any, idx: number) => (
-                   <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '2px 0' }}>
-                     <span>• {item.commonName}</span>
-                     <span>{item.weightKg.toFixed(1)} kg</span>
-                   </div>
-                 ))}
+                 {h.items.map((item: any, idx: number) => {
+                   const benefitedObj = h.benefitedItems?.find((x:any) => x.matrixId === item.matrixId);
+                   return (
+                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '2px 0' }}>
+                       <span>• {item.commonName}</span>
+                       <span>{item.weightKg.toFixed(1)} kg {benefitedObj && <span style={{ color: 'var(--primary-light)' }}>$\rightarrow$ {benefitedObj.weightKg.toFixed(1)} kg</span>}</span>
+                     </div>
+                   );
+                 })}
                </div>
              </div>
           ))}

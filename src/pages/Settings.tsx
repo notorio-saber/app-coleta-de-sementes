@@ -13,6 +13,7 @@ export function Settings() {
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [goalLoading, setGoalLoading] = useState(false);
   const [monthlyGoal, setMonthlyGoal] = useState<string>('');
+  const [inviteRole, setInviteRole] = useState<'coletor' | 'beneficiador'>('coletor');
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +25,8 @@ export function Settings() {
         name: newTeamName,
         ownerId: user.uid,
         members: [user.uid],
-        invitedEmails: []
+        invitedEmails: [],
+        roles: {}
       });
 
       await refreshTeams();
@@ -45,8 +47,10 @@ export function Settings() {
     setLoadingInvite(true);
     try {
       const teamRef = doc(db, 'teams', activeTeam.id);
+      const emailKey = inviteEmail.trim().toLowerCase();
       await updateDoc(teamRef, {
-        invitedEmails: arrayUnion(inviteEmail.trim().toLowerCase())
+        invitedEmails: arrayUnion(emailKey),
+        [`roles.${emailKey}`]: inviteRole
       });
       alert(`Convite enviado para ${inviteEmail}!`);
       setInviteEmail('');
@@ -94,9 +98,16 @@ export function Settings() {
         {activeTeam ? (
           <div>
             <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--primary-color)' }}>{activeTeam.name}</p>
-            <p className="text-muted" style={{ fontSize: '0.875rem' }}>Membros Registrados: {activeTeam.members?.length || 1}</p>
+            <p className="text-muted" style={{ fontSize: '0.875rem' }}>Membros Reais/Logs: {activeTeam.members?.length || 1}</p>
             {activeTeam.invitedEmails && activeTeam.invitedEmails.length > 0 && (
-              <p className="text-muted" style={{ fontSize: '0.875rem' }}>Convidados: {activeTeam.invitedEmails.join(', ')}</p>
+              <div style={{ marginTop: '0.5rem' }}>
+                 <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>Lista de E-mails na Nuvem (Ativos/Convites):</p>
+                 <ul style={{ fontSize: '0.8rem', color: 'var(--text-dim)', paddingLeft: '1rem' }}>
+                   {activeTeam.invitedEmails.map(email => (
+                     <li key={email}>{email} - <span style={{ color: 'var(--primary-color)' }}>{activeTeam.roles?.[email] || 'coletor'}</span></li>
+                   ))}
+                 </ul>
+              </div>
             )}
 
             {activeTeam.ownerId === user?.uid && (
@@ -113,6 +124,10 @@ export function Settings() {
                       value={inviteEmail}
                       onChange={e => setInviteEmail(e.target.value)}
                     />
+                    <select className="select" value={inviteRole} onChange={e => setInviteRole(e.target.value as any)}>
+                      <option value="coletor">Coletor de Campo</option>
+                      <option value="beneficiador">Laboratório (Beneficiamento)</option>
+                    </select>
                     <button type="submit" className="btn btn-primary" style={{ flexShrink: 0 }} disabled={loadingInvite}>
                       {loadingInvite ? '...' : 'Adicionar'}
                     </button>

@@ -9,6 +9,7 @@ export interface Team {
   ownerId: string;
   members: string[]; // uids
   invitedEmails?: string[]; // emails
+  roles?: Record<string, 'admin' | 'coletor' | 'beneficiador'>; // email -> role
   monthlyGoalKg?: number;
 }
 
@@ -16,6 +17,7 @@ interface TeamContextType {
   activeTeam: Team | null;
   userTeams: Team[];
   setActiveTeam: (team: Team) => void;
+  userRole: 'admin' | 'coletor' | 'beneficiador';
   loading: boolean;
   refreshTeams: () => Promise<void>;
 }
@@ -68,8 +70,18 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     fetchTeams();
   }, [user]);
 
+  // Determine active user role
+  let userRole: 'admin' | 'coletor' | 'beneficiador' = 'coletor'; // default
+  if (activeTeam && user) {
+    if (activeTeam.ownerId === user.uid) {
+      userRole = 'admin';
+    } else if (activeTeam.roles && user.email && activeTeam.roles[user.email.toLowerCase()]) {
+      userRole = activeTeam.roles[user.email.toLowerCase()];
+    }
+  }
+
   return (
-    <TeamContext.Provider value={{ activeTeam, userTeams, setActiveTeam, loading, refreshTeams: fetchTeams }}>
+    <TeamContext.Provider value={{ activeTeam, userTeams, setActiveTeam, userRole, loading, refreshTeams: fetchTeams }}>
       {children}
     </TeamContext.Provider>
   );
