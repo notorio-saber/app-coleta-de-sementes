@@ -77,8 +77,14 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       userRole = 'admin';
     } else if (activeTeam.roles && user.email) {
       const emailLower = user.email.toLowerCase();
-      // Procurar se alguma chave do `roles` bate com o email (ignorando maiúsculas)
-      const roleKey = Object.keys(activeTeam.roles).find(k => k.toLowerCase() === emailLower);
+      
+      // Procurar match exato ou match solto (ignorando .com que às vezes falta em convites)
+      const roleKey = Object.keys(activeTeam.roles).find(k => {
+        const kStr = k.toLowerCase().replace('.com', '').replace('.br', '');
+        const eStr = emailLower.replace('.com', '').replace('.br', '');
+        return kStr === eStr;
+      });
+      
       if (roleKey) {
         userRole = activeTeam.roles[roleKey];
       }

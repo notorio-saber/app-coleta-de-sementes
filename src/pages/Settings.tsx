@@ -132,11 +132,19 @@ export function Settings() {
           <div>
             <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--primary-color)' }}>{activeTeam.name}</p>
             <p className="text-muted" style={{ fontSize: '0.875rem' }}>Membros Reais/Logs: {activeTeam.members?.length || 1}</p>
-            {activeTeam.roles && Object.keys(activeTeam.roles).length > 0 && (
-              <div style={{ marginTop: '0.5rem' }}>
-                 <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>Lista de E-mails na Nuvem (Ativos/Convites):</p>
-                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                   {Object.keys(activeTeam.roles).map(email => (
+            {(() => {
+              const allEmails = Array.from(new Set([
+                ...(activeTeam.invitedEmails || []),
+                ...Object.keys(activeTeam.roles || {})
+              ]));
+              
+              if (allEmails.length === 0) return null;
+              
+              return (
+                <div style={{ marginTop: '0.5rem' }}>
+                   <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>Lista de E-mails na Nuvem (Ativos/Convites):</p>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                     {allEmails.map(email => (
                      <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-color)', padding: '0.5rem 0.75rem', borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-subtle)' }}>
                        <div style={{ flex: 1 }}>
                          <div style={{ fontSize: '0.85rem' }}>{email}</div>
@@ -164,7 +172,8 @@ export function Settings() {
                    ))}
                  </div>
               </div>
-            )}
+              );
+            })()}
 
             {activeTeam.ownerId === user?.uid && (
               <>
