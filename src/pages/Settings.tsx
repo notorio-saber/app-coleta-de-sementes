@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
 import { db } from '../lib/firebase';
-import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
+import { Trash2 } from 'lucide-react';
 
 export function Settings() {
   const { signOut, user } = useAuth();
@@ -63,6 +64,24 @@ export function Settings() {
     }
   };
 
+  const handleRemoveMember = async (emailToRemove: string) => {
+    if (!activeTeam) return;
+    if (!window.confirm(`Tem certeza que deseja remover ${emailToRemove} da equipe?`)) return;
+
+    try {
+      const teamRef = doc(db, 'teams', activeTeam.id);
+      await updateDoc(teamRef, {
+        invitedEmails: arrayRemove(emailToRemove),
+        [`roles.${emailToRemove}`]: deleteField()
+      });
+      alert('Membro removido com sucesso!');
+      await refreshTeams();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao remover membro.');
+    }
+  };
+
   const handleUpdateGoal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTeam || !monthlyGoal) return;
@@ -102,11 +121,21 @@ export function Settings() {
             {activeTeam.invitedEmails && activeTeam.invitedEmails.length > 0 && (
               <div style={{ marginTop: '0.5rem' }}>
                  <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>Lista de E-mails na Nuvem (Ativos/Convites):</p>
-                 <ul style={{ fontSize: '0.8rem', color: 'var(--text-dim)', paddingLeft: '1rem' }}>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
                    {activeTeam.invitedEmails.map(email => (
-                     <li key={email}>{email} - <span style={{ color: 'var(--primary-color)' }}>{activeTeam.roles?.[email] || 'coletor'}</span></li>
+                     <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-color)', padding: '0.5rem 0.75rem', borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                       <div>
+                         <div style={{ fontSize: '0.85rem' }}>{email}</div>
+                         <div style={{ fontSize: '0.7rem', color: 'var(--primary-color)', fontWeight: 'bold', textTransform: 'uppercase' }}>{activeTeam.roles?.[email] || 'coletor'}</div>
+                       </div>
+                       {activeTeam.ownerId === user?.uid && activeTeam.ownerId !== email && (
+                         <button onClick={() => handleRemoveMember(email)} className="btn btn-danger" style={{ padding: '0.4rem' }}>
+                           <Trash2 size={14} />
+                         </button>
+                       )}
+                     </div>
                    ))}
-                 </ul>
+                 </div>
               </div>
             )}
 
@@ -124,7 +153,7 @@ export function Settings() {
                       value={inviteEmail}
                       onChange={e => setInviteEmail(e.target.value)}
                     />
-                    <select className="select" value={inviteRole} onChange={e => setInviteRole(e.target.value as any)}>
+                    <select className="input" value={inviteRole} onChange={e => setInviteRole(e.target.value as any)}>
                       <option value="coletor">Coletor de Campo</option>
                       <option value="beneficiador">Laboratório (Beneficiamento)</option>
                     </select>

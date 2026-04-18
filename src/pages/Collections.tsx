@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Plus, Save, Trash2, TrendingUp } from 'lucide-react';
+import { Plus, Save, Trash2, TrendingUp, Edit } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface MatrixOption {
@@ -27,6 +27,7 @@ export function Collections() {
   
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<HarvestItem[]>([]);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -97,27 +98,56 @@ export function Collections() {
     });
 
     try {
-      const newDoc = {
-        teamId: activeTeam.id,
-        operatorId: user.uid,
-        operatorEmail: user.email,
+      const payload = {
         date,
         totalKg,
-        items: finalItems,
-        timestamp: serverTimestamp()
+        items: finalItems
       };
       
-      const docRef = await addDoc(collection(db, 'harvests'), newDoc);
-      
-      setHarvests([{ id: docRef.id, ...newDoc }, ...harvests]);
+      if (editingId) {
+        await updateDoc(doc(db, 'harvests', editingId), payload);
+        alert('Coleta atualizada com sucesso!');
+        setHarvests(harvests.map(h => h.id === editingId ? { ...h, ...payload } : h));
+      } else {
+        const newDoc = {
+          ...payload,
+          teamId: activeTeam.id,
+          operatorId: user.uid,
+          operatorEmail: user.email,
+          timestamp: serverTimestamp()
+        };
+        const docRef = await addDoc(collection(db, 'harvests'), newDoc);
+        setHarvests([{ id: docRef.id, ...newDoc }, ...harvests]);
+        alert('Coleta registrada som sucesso!');
+      }
+
       setIsFormOpen(false);
+      setEditingId(null);
       setItems([]);
-      alert('Coleta registrada som sucesso!');
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar comanda.');
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  const handleEdit = (h: any) => {
+    setIsFormOpen(true);
+    setEditingId(h.id);
+    setDate(h.date);
+    setItems(h.items.map((i: any) => ({ ...i, weightKg: String(i.weightKg) })));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Essa exclusão é permanente. Tem certeza que deseja apagar os registros desta coleta?")) return;
+    try {
+      await deleteDoc(doc(db, 'harvests', id));
+      setHarvests(harvests.filter(h => h.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao apagar.');
     }
   };
 
@@ -140,12 +170,14 @@ export function Collections() {
       </div>
 
       {!isFormOpen ? (
-        <button className="btn btn-primary" style={{ width: '100%', marginBottom: '1.5rem' }} onClick={() => setIsFormOpen(true)}>
+        <button className="btn btn-primary" style={{ width: '100%', marginBottom: '1.5rem' }} onClick={() => { setIsFormOpen(true); setEditingId(null); setDate(new Date().toISOString().split('T')[0]); setItems([]); }}>
           <Plus size={18} /> Lançar nova coleta
         </button>
       ) : (
         <div className="card electric-card animate-entry" style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1rem', color: 'var(--primary-light)' }}>Nova Coleta do Dia</h3>
+          <h3 style={{ marginBottom: '1rem', color: 'var(--primary-light)' }}>
+            {editingId ? 'Editando Coleta' : 'Nova Coleta do Dia'}
+          </h3>
           <form onSubmit={handleSubmit}>
             <div className="input-group">
               <label>Data</label>
@@ -239,7 +271,13 @@ export function Collections() {
           {harvests.map((h, i) => (
              <div key={h.id || i} className="card animate-entry" style={{ animationDelay: `${i * 50}ms` }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
-                 <span style={{ fontWeight: 'bold' }}>{new Date(h.date).toLocaleDateString()}</span>
+                 <div style={{ display: 'flex', flexDirection: 'column' }}>
+                   <span style={{ fontWeight: 'bold' }}>{new Date(h.date).toLocaleDateString()}</span>
+                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                     <button onClick={() => handleEdit(h)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}><Edit size={14} /></button>
+                     <button onClick={() => handleDelete(h.id)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', padding: 0 }}><Trash2 size={14} /></button>
+                   </div>
+                 </div>
                  <div style={{ textAlign: 'right' }}>
                    <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Bruto (Campo): {h.totalKg.toFixed(1)} Kg</div>
                    <div style={{ color: 'var(--primary-light)', fontWeight: 'bold' }}>

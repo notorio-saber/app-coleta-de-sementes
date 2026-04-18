@@ -12,6 +12,7 @@ export function Dashboard() {
   const [urgentMatrices, setUrgentMatrices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthlyCollected, setMonthlyCollected] = useState(0);
+  const [monthlyRawCollected, setMonthlyRawCollected] = useState(0);
 
   useEffect(() => {
     async function fetchStats() {
@@ -49,6 +50,7 @@ export function Dashboard() {
         const snapHarvests = await getDocs(qHarvests);
         
         let collectedThisMonth = 0;
+        let collectedRawThisMonth = 0;
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
@@ -59,11 +61,13 @@ export function Dashboard() {
              if (hDate.getUTCMonth() === currentMonth && hDate.getUTCFullYear() === currentYear) {
                 // Now monthly goal applies ONLY to benefited/processed seeds
                 collectedThisMonth += (data.benefitedTotalKg || 0);
+                collectedRawThisMonth += (data.totalKg || 0);
              }
           }
         });
 
         setMonthlyCollected(collectedThisMonth);
+        setMonthlyRawCollected(collectedRawThisMonth);
 
       } catch (err) {
         console.error("Error fetching stats:", err);
@@ -115,8 +119,12 @@ export function Dashboard() {
             
             {activeTeam.monthlyGoalKg && activeTeam.monthlyGoalKg > 0 ? (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-end' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'goldenrod' }}>{monthlyCollected.toFixed(1)} <span style={{ fontSize:'0.8rem' }}>kg</span></span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', alignItems: 'flex-end' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Volume Bruto Entrante:</span>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>{monthlyRawCollected.toFixed(1)} kg</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem' }}>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'goldenrod' }}>{monthlyCollected.toFixed(1)} <span style={{ fontSize:'0.8rem' }}>kg Líquido</span></span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Meta: {activeTeam.monthlyGoalKg} kg</span>
                 </div>
                 <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--surface-elevated)', borderRadius: '4px', overflow: 'hidden' }}>

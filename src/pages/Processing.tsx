@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { CheckCircle2, ChevronRight, Save } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Save, Trash2 } from 'lucide-react';
 
 export function Processing() {
   const { activeTeam } = useTeam();
@@ -94,6 +94,37 @@ export function Processing() {
     }
   };
 
+  const handleClearProcess = async (h: any) => {
+    if (!activeTeam || !window.confirm("Isso desfará o beneficiamento e reverterá a comanda para 'Pendente'. Tem certeza?")) return;
+    setSubmitLoading(true);
+    try {
+      await updateDoc(doc(db, 'harvests', h.id), {
+        benefitedTotalKg: deleteField(),
+        benefitedItems: deleteField(),
+        processedBy: deleteField(),
+        processedAt: deleteField()
+      });
+      
+      setHarvests(harvests.map(hItem => {
+        if (hItem.id === h.id) {
+           const newItem = { ...hItem };
+           delete newItem.benefitedTotalKg;
+           delete newItem.benefitedItems;
+           delete newItem.processedBy;
+           delete newItem.processedAt;
+           return newItem;
+        }
+        return hItem;
+      }));
+      setOpenHarvestId(null);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir beneficiamento.');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
   return (
     <div style={{ paddingBottom: '80px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -156,9 +187,14 @@ export function Processing() {
 
                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
                        {isProcessed && (
-                         <span style={{ fontSize: '0.85rem', color: 'var(--success-color)' }}>
-                           Beneficiado: {h.benefitedTotalKg.toFixed(1)} kg
-                         </span>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                           <span style={{ fontSize: '0.85rem', color: 'var(--success-color)' }}>
+                             Salvo: {h.benefitedTotalKg.toFixed(1)} kg
+                           </span>
+                           <button type="button" onClick={() => handleClearProcess(h)} className="btn btn-danger" style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                             <Trash2 size={16} /> Zerar
+                           </button>
+                         </div>
                        )}
                        <button onClick={() => handleSaveProcess(h)} className="btn btn-primary" disabled={submitLoading} style={{ marginLeft: 'auto', padding: '0.5rem 1rem' }}>
                          {submitLoading ? '...' : <><Save size={16} /> Salvar Laboratório</>}

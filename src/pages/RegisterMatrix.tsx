@@ -7,6 +7,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db, storage } from '../lib/firebase';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
+import exifr from 'exifr';
 
 export function RegisterMatrix() {
   const { activeTeam } = useTeam();
@@ -44,12 +45,24 @@ export function RegisterMatrix() {
     }
   };
 
-  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && photos.length < 3) {
+      
+      // Attempt EXIF extraction
+      try {
+        const coords = await exifr.gps(file);
+        if (coords && coords.latitude && coords.longitude) {
+          setLocation({ lat: coords.latitude, lng: coords.longitude });
+          alert("📍 Localização resgatada automaticamente da foto!");
+        }
+      } catch(err) {
+        console.log("Sem dados EXIF", err);
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotos([...photos, reader.result as string]);
+        setPhotos(prev => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     } else if (photos.length >= 3) {
@@ -203,7 +216,6 @@ export function RegisterMatrix() {
           <input 
             type="file" 
             accept="image/*" 
-            capture="environment" 
             style={{ display: 'none' }} 
             ref={fileInputRef}
             onChange={handlePhotoCapture}
