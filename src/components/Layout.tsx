@@ -70,7 +70,7 @@ export function Layout() {
         
         <NavLink to="/matrices" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Archive />
-          <span>Acervo</span>
+          <span>Matrizes</span>
         </NavLink>
       </nav>
     </div>

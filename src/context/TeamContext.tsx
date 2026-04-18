@@ -75,8 +75,13 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   if (activeTeam && user) {
     if (activeTeam.ownerId === user.uid) {
       userRole = 'admin';
-    } else if (activeTeam.roles && user.email && activeTeam.roles[user.email.toLowerCase()]) {
-      userRole = activeTeam.roles[user.email.toLowerCase()];
+    } else if (activeTeam.roles && user.email) {
+      const emailLower = user.email.toLowerCase();
+      // Procurar se alguma chave do `roles` bate com o email (ignorando maiúsculas)
+      const roleKey = Object.keys(activeTeam.roles).find(k => k.toLowerCase() === emailLower);
+      if (roleKey) {
+        userRole = activeTeam.roles[roleKey];
+      }
     }
   }
 
