@@ -7,7 +7,7 @@ import { Download, Image as ImageIcon, MapPin, Edit, Trash2 } from 'lucide-react
 import { useNavigate } from 'react-router-dom';
 
 export function MatricesList() {
-  const { activeTeam } = useTeam();
+  const { activeTeam, userRole } = useTeam();
   const { user } = useAuth();
   const [matrices, setMatrices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -223,12 +223,16 @@ export function MatricesList() {
                    >
                      <MapPin size={14} /> Obter Rota
                    </button>
-                   <button onClick={() => navigate(`/edit/${matrix.id}`)} className="btn btn-secondary" style={{ width: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                     <Edit size={16} />
-                   </button>
-                   <button onClick={() => handleDelete(matrix.id, matrix.commonName)} className="btn btn-danger" style={{ width: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                     <Trash2 size={16} />
-                   </button>
+                   {userRole !== 'beneficiador' && (
+                     <>
+                       <button onClick={() => navigate(`/edit/${matrix.id}`)} className="btn btn-secondary" style={{ width: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         <Edit size={16} />
+                       </button>
+                       <button onClick={() => handleDelete(matrix.id, matrix.commonName)} className="btn btn-danger" style={{ width: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         <Trash2 size={16} />
+                       </button>
+                     </>
+                   )}
                  </div>
                </div>
              )

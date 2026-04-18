@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { Plus, AlertCircle, Calendar, CheckCircle2, MapPin, Image as ImageIcon } from 'lucide-react';
 
 export function Dashboard() {
-  const { activeTeam } = useTeam();
+  const { activeTeam, userRole } = useTeam();
   const [matricesCount, setMatricesCount] = useState(0);
   const [urgentCount, setUrgentCount] = useState(0);
   const [urgentMatrices, setUrgentMatrices] = useState<any[]>([]);
@@ -147,11 +147,13 @@ export function Dashboard() {
           </div>
           
           
-          <Link to="/register" style={{ textDecoration: 'none' }}>
-            <button className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }}>
-              <Plus size={18} /> Nova Matriz
-            </button>
-          </Link>
+          {userRole !== 'beneficiador' && (
+            <Link to="/register" style={{ textDecoration: 'none' }}>
+              <button className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }}>
+                <Plus size={18} /> Nova Matriz
+              </button>
+            </Link>
+          )}
           
           {urgentMatrices.length > 0 && (
             <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
