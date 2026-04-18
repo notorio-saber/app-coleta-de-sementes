@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { MapView } from './pages/MapView';
 import { RoutesView } from './pages/RoutesView';
 import { MatricesList } from './pages/MatricesList';
+import { Alerts } from './pages/Alerts';
 import { Settings } from './pages/Settings';
 
 // Auth Guard Component
@@ -37,6 +38,7 @@ function App() {
             <Route path="map" element={<MapView />} />
             <Route path="routes" element={<RoutesView />} />
             <Route path="matrices" element={<MatricesList />} />
+            <Route path="alerts" element={<Alerts />} />
             <Route path="settings" element={<Settings />} />
             <Route path="register" element={<RegisterMatrix />} />
           </Route>

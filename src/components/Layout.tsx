@@ -16,7 +16,7 @@ export function Layout() {
         zIndex: 1000
       }}>
         <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary-color)' }}>Sementes</h1>
-        <NavLink to="/" style={{ color: 'var(--text-muted)' }}>
+        <NavLink to="/alerts" style={{ color: 'var(--text-muted)' }}>
            <Bell size={24} />
         </NavLink>
       </header>
