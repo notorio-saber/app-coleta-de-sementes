@@ -120,7 +120,7 @@ export function Dashboard() {
             {activeTeam.monthlyGoalKg && activeTeam.monthlyGoalKg > 0 ? (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-end', paddingTop: '0.5rem' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'goldenrod' }}>{monthlyCollected.toFixed(1)} <span style={{ fontSize:'0.8rem' }}>kg Puros</span></span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'goldenrod' }}>{monthlyCollected.toFixed(1)} <span style={{ fontSize:'0.8rem' }}>kg Beneficiado</span></span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Meta: {activeTeam.monthlyGoalKg} kg</span>
                 </div>
                 <div style={{ width: '100%', height: '10px', backgroundColor: 'var(--surface-elevated)', borderRadius: '5px', overflow: 'hidden' }}>
@@ -136,7 +136,7 @@ export function Dashboard() {
                     {((monthlyCollected / activeTeam.monthlyGoalKg) * 100).toFixed(1)}% alcançado
                   </span>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                    *Curiosidade (Bruto na Roça): {monthlyRawCollected.toFixed(1)} kg
+                    Peso Bruto: {monthlyRawCollected.toFixed(1)} kg
                   </span>
                 </div>
               </div>
