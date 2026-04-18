@@ -3,7 +3,7 @@ import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
 import { collection, query, where, getDocs, doc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { CheckCircle2, ChevronRight, Save, Trash2, TrendingUp } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Save, Trash2, TrendingUp, Download } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { saveProcessingOffline } from '../lib/offlineSync';
 
@@ -147,6 +147,40 @@ export function Processing() {
     }
   };
 
+  const handleExportCSV = () => {
+    if (harvests.length === 0) return;
+
+    const headers = ['Data', 'Peso Bruto Total (Kg)', 'Peso Beneficiado Puro (Kg)', 'Equipe de Campo', 'Laboratório', 'Detalhes (Bruto -> Puro)'];
+    const csvContent = [
+      headers.join(','),
+      ...harvests.map(h => {
+        const detailsStr = h.items.map((i:any) => {
+          const benefitedObj = h.benefitedItems?.find((x:any) => x.matrixId === i.matrixId);
+          const valB = benefitedObj ? benefitedObj.weightKg : 'Pend.';
+          return `${i.commonName} (${i.weightKg}kg -> ${valB}kg)`;
+        }).join(' | ');
+
+        return [
+          `"${new Date(h.date).toLocaleDateString()}"`,
+          h.totalKg.toFixed(2),
+          h.benefitedTotalKg !== undefined ? h.benefitedTotalKg.toFixed(2) : 'Pendente',
+          `"${h.operatorEmail || ''}"`,
+          `"${h.processedBy || 'Pendente'}"`,
+          `"${detailsStr}"`
+        ].join(',');
+      })
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `beneficiamento_${activeTeam?.name || 'equipe'}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const chartData = [...harvests].reverse().reduce((acc: any[], curr) => {
     const existing = acc.find(x => x.date === curr.date);
     if (existing) {
@@ -194,7 +228,14 @@ export function Processing() {
         </div>
       )}
 
-      <p className="text-muted" style={{ marginBottom: '1rem' }}>Comandas aguardando beneficiamento</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', marginTop: '1.5rem' }}>
+        <p className="text-muted" style={{ margin: 0 }}>Comandas aguardando beneficiamento</p>
+        {harvests.length > 0 && (
+          <button onClick={handleExportCSV} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+            <Download size={14} /> Relatório CSV
+          </button>
+        )}
+      </div>
 
       {loading ? (
         <p>Carregando comandas...</p>

@@ -3,7 +3,7 @@ import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Plus, Save, Trash2, TrendingUp, Edit } from 'lucide-react';
+import { Plus, Save, Trash2, TrendingUp, Edit, Download } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { saveHarvestOffline } from '../lib/offlineSync';
 
@@ -166,6 +166,35 @@ export function Collections() {
     }
   };
 
+  const handleExportCSV = () => {
+    if (harvests.length === 0) return;
+
+    const headers = ['Data', 'Peso Bruto Campo (Kg)', 'Peso Beneficiado (Kg)', 'Operador Rota', 'Laboratório', 'Itens da Coleta'];
+    const csvContent = [
+      headers.join(','),
+      ...harvests.map(h => {
+        const itemsStr = h.items.map((i:any) => `${i.commonName} (${i.weightKg}kg)`).join(' | ');
+        return [
+          `"${new Date(h.date).toLocaleDateString()}"`,
+          h.totalKg.toFixed(2),
+          h.benefitedTotalKg !== undefined ? h.benefitedTotalKg.toFixed(2) : '',
+          `"${h.operatorEmail || ''}"`,
+          `"${h.processedBy || ''}"`,
+          `"${itemsStr}"`
+        ].join(',');
+      })
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `coletas_${activeTeam?.name || 'equipe'}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Helper for Chart
   const chartData = [...harvests].reverse().reduce((acc: any[], curr) => {
     const existing = acc.find(x => x.date === curr.date);
@@ -276,7 +305,14 @@ export function Collections() {
       )}
 
       {/* Histórico das Comandas */}
-      <h3 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.1rem' }}>Histórico da Equipe</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', marginBottom: '1rem' }}>
+        <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Histórico da Equipe</h3>
+        {harvests.length > 0 && (
+          <button onClick={handleExportCSV} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+            <Download size={14} /> Relatório CSV
+          </button>
+        )}
+      </div>
       {loading ? (
         <p className="text-muted">Carregando coletas...</p>
       ) : harvests.length === 0 ? (
