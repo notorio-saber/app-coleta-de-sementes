@@ -113,21 +113,17 @@ export function Dashboard() {
           {/* Meta Mensal de Produção */}
           <div className="card" style={{ marginTop: '1rem', borderTop: '4px solid goldenrod' }}>
             <h2 style={{ fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Sucesso do Beneficiamento (Kg)</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Semente Líquida (Mês)</span>
+              <span>Meta de Semente Beneficiada</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mês Atual</span>
             </h2>
             
             {activeTeam.monthlyGoalKg && activeTeam.monthlyGoalKg > 0 ? (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', alignItems: 'flex-end' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Volume Bruto Entrante:</span>
-                  <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>{monthlyRawCollected.toFixed(1)} kg</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'goldenrod' }}>{monthlyCollected.toFixed(1)} <span style={{ fontSize:'0.8rem' }}>kg Líquido</span></span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-end', paddingTop: '0.5rem' }}>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'goldenrod' }}>{monthlyCollected.toFixed(1)} <span style={{ fontSize:'0.8rem' }}>kg Puros</span></span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Meta: {activeTeam.monthlyGoalKg} kg</span>
                 </div>
-                <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--surface-elevated)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '10px', backgroundColor: 'var(--surface-elevated)', borderRadius: '5px', overflow: 'hidden' }}>
                   <div style={{ 
                     height: '100%', 
                     width: `${Math.min(100, (monthlyCollected / activeTeam.monthlyGoalKg) * 100)}%`, 
@@ -135,9 +131,14 @@ export function Dashboard() {
                     transition: 'width 1s ease-in-out' 
                   }} />
                 </div>
-                <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-                  {((monthlyCollected / activeTeam.monthlyGoalKg) * 100).toFixed(1)}% alcançado
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>
+                    {((monthlyCollected / activeTeam.monthlyGoalKg) * 100).toFixed(1)}% alcançado
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                    *Curiosidade (Bruto na Roça): {monthlyRawCollected.toFixed(1)} kg
+                  </span>
+                </div>
               </div>
             ) : (
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
