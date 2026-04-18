@@ -164,7 +164,7 @@ export function Settings() {
                            <select 
                              className="input" 
                              style={{ padding: '0.25rem', fontSize: '0.75rem', marginTop: '0.25rem', width: 'auto', display: 'inline-block' }}
-                             value={activeTeam.roles?.[email] || 'coletor'}
+                             value={typeof activeTeam.roles?.[email] === 'string' ? activeTeam.roles[email] : 'coletor'}
                              onChange={(e) => handleUpdateUserRole(email, e.target.value)}
                            >
                              <option value="coletor">Coletor</option>
@@ -172,7 +172,9 @@ export function Settings() {
                              <option value="admin">Admin</option>
                            </select>
                          ) : (
-                           <div style={{ fontSize: '0.7rem', color: 'var(--primary-color)', fontWeight: 'bold', textTransform: 'uppercase' }}>{activeTeam.roles?.[email] || 'coletor'}</div>
+                           <div style={{ fontSize: '0.7rem', color: 'var(--primary-color)', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                             {typeof activeTeam.roles?.[email] === 'string' ? activeTeam.roles[email] : 'coletor'}
+                           </div>
                          )}
                        </div>
                        {activeTeam.ownerId === user?.uid && activeTeam.ownerId !== email && (
