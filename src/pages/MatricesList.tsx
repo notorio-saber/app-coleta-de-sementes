@@ -140,8 +140,8 @@ export function MatricesList() {
       {filteredData.length === 0 ? (
         <p className="text-muted">Nenhuma matriz encontrada.</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-           {filteredData.map(matrix => {
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+           {filteredData.map((matrix, index) => {
              // photos or photoBase64s
              const firstPhoto = (matrix.photos && matrix.photos.length > 0) ? matrix.photos[0] : 
                                 (matrix.photoBase64s && matrix.photoBase64s.length > 0) ? matrix.photoBase64s[0] : null;
@@ -149,6 +149,7 @@ export function MatricesList() {
              let diffDays = 0;
              let progressProgress = 0;
              let statusColor = 'var(--success-color)';
+             let isUrgent = false;
              
              if (matrix.revisitDate) {
                const revDate = new Date(matrix.revisitDate);
@@ -156,6 +157,8 @@ export function MatricesList() {
                diffDays = Math.ceil((revDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                progressProgress = Math.min(100, Math.max(0, 100 - (diffDays / 60) * 100));
                
+
+               if (diffDays <= 7) isUrgent = true;
                if (diffDays <= 0) {
                  statusColor = 'var(--danger-color)';
                  progressProgress = 100;
@@ -165,63 +168,53 @@ export function MatricesList() {
              }
 
              return (
-               <div key={matrix.id} className="card" style={{ padding: '1rem' }}>
-                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+               <div key={matrix.id} className={`card ${isUrgent ? 'electric-card' : ''} animate-entry`} style={{ animationDelay: `${index * 50}ms`, padding: '0.75rem' }}>
+                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     {/* Thumbnail */}
-                    <div style={{ width: '70px', height: '70px', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--border-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '55px', height: '55px', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--surface-elevated)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {firstPhoto ? (
                         <img src={firstPhoto} alt="Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <ImageIcon size={24} color="#888" />
+                        <ImageIcon size={20} color="var(--text-muted)" />
                       )}
                     </div>
                     
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.2rem 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
-                      <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', fontStyle: 'italic', color: 'var(--primary-color)' }}>{matrix.scientificName}</p>
-                      
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="text-muted" style={{ fontSize: '0.8rem' }}>{matrix.fruitingStage}</span>
-                        {matrix.creatorEmail && <span className="text-muted" style={{ fontSize: '0.75rem' }}>{matrix.creatorEmail.split('@')[0]}</span>}
+                      <h3 style={{ fontSize: '1rem', margin: '0 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <p style={{ margin: '0', fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.scientificName}</p>
+                        <span style={{ fontSize: '0.7rem', color: statusColor, fontWeight: 500, padding: '2px 6px', background: `${statusColor}15`, borderRadius: '4px' }}>{matrix.fruitingStage}</span>
                       </div>
                     </div>
                  </div>
 
                  {/* Barra de Progresso do Registro Pessoal */}
                  {matrix.revisitDate && (
-                    <div style={{ marginTop: '0.75rem', backgroundColor: 'var(--bg-color)', padding: '0.5rem', borderRadius: 'var(--border-radius-sm)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                        <span className="text-muted">Prazo de Visita</span>
-                        <span style={{ color: statusColor }}>{diffDays <= 0 ? 'Atrasado' : `Faltam ${diffDays} dias`}</span>
+                    <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.7rem', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--text-dim)' }}>Prazo</span>
+                        <span style={{ color: statusColor }}>{diffDays <= 0 ? 'Atrasado' : `${diffDays} dias`}</span>
                       </div>
-                      <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--surface-elevated)', borderRadius: '2px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${progressProgress}%`, backgroundColor: statusColor, transition: 'width 0.3s ease' }} />
                       </div>
                     </div>
                  )}
 
                  {/* Botões de Ação Universais */}
-                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: matrix.revisitDate ? '0' : '0.75rem' }}>
                    <button 
                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
                      className="btn btn-primary" 
-                     style={{ flex: 1, padding: '0.6rem', fontSize: '0.85rem' }}
+                     style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}
                    >
-                     <MapPin size={16} /> Obter Rota
+                     <MapPin size={14} /> Obter Rota
                    </button>
-                   <button 
-                     onClick={() => navigate(`/edit/${matrix.id}`)}
-                     className="btn btn-secondary" 
-                     style={{ width: 'auto', padding: '0.6rem', fontSize: '0.85rem' }}
-                   >
+                   <button onClick={() => navigate(`/edit/${matrix.id}`)} className="btn btn-secondary" style={{ width: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                      <Edit size={16} />
                    </button>
-                   <button 
-                     onClick={() => handleDelete(matrix.id, matrix.commonName)}
-                     className="btn btn-secondary" 
-                     style={{ width: 'auto', padding: '0.6rem', fontSize: '0.85rem', color: 'var(--danger-color)', borderColor: 'var(--danger-color)' }}
-                   >
+                   <button onClick={() => handleDelete(matrix.id, matrix.commonName)} className="btn btn-danger" style={{ width: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                      <Trash2 size={16} />
                    </button>
                  </div>

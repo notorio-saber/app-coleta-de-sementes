@@ -101,19 +101,17 @@ export function Dashboard() {
           {urgentMatrices.length > 0 && (
             <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <h2 style={{ fontSize: '1.2rem', color: 'var(--danger-color)' }}>Urgentes e Próximos</h2>
-              {urgentMatrices.map(matrix => {
+              {urgentMatrices.slice(0, 5).map((matrix, index) => {
                 const diffDays = matrix.diffDays;
                 let statusColor = 'var(--success-color)';
                 let Icon = CheckCircle2;
                 let statusText = `${diffDays} dias`;
-                
-                let progressProgress = Math.min(100, Math.max(0, 100 - (diffDays / 60) * 100));
+                const isUrgent = diffDays <= 3;
 
                 if (diffDays <= 0) {
                   statusColor = 'var(--danger-color)';
                   Icon = AlertCircle;
                   statusText = 'Atrasado';
-                  progressProgress = 100;
                 } else if (diffDays <= 7) {
                   statusColor = 'var(--warning-color)';
                   Icon = Calendar;
@@ -124,48 +122,40 @@ export function Dashboard() {
                                    (matrix.photoBase64s && matrix.photoBase64s.length > 0) ? matrix.photoBase64s[0] : null;
 
                 return (
-                  <div key={matrix.id} className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', borderTop: `4px solid ${statusColor}`, paddingTop: '1.5rem' }}>
+                  <div key={matrix.id} className={`card animate-entry ${isUrgent ? 'electric-card' : ''}`} style={{ animationDelay: `${index * 50}ms`, padding: '0.75rem' }}>
                     
-                    <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--border-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {firstPhoto ? (
-                        <img src={firstPhoto} alt="Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <ImageIcon size={24} color="#888" />
-                      )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '55px', height: '55px', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--surface-elevated)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {firstPhoto ? (
+                          <img src={firstPhoto} alt="Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <ImageIcon size={20} color="var(--text-muted)" />
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ overflow: 'hidden' }}>
+                            <h3 style={{ fontSize: '1rem', margin: '0 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
+                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.scientificName}</p>
+                          </div>
+                          <Icon color={statusColor} size={20} style={{ flexShrink: 0, marginLeft: '0.5rem' }} />
+                        </div>
+                      </div>
                     </div>
 
-                    <div style={{ flex: 1, width: '100%' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>{matrix.commonName}</h3>
-                          <p className="text-muted" style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>{matrix.scientificName}</p>
-                        </div>
-                        <Icon color={statusColor} size={24} />
-                      </div>
-                      
-                      <div style={{ margin: '1rem 0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                          <span className="text-muted">Urgência</span>
-                          <span style={{ color: statusColor }}>{statusText}</span>
-                        </div>
-                        <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${progressProgress}%`, backgroundColor: statusColor, transition: 'width 0.3s ease' }} />
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-color)', padding: '0.5rem', borderRadius: 'var(--border-radius-sm)' }}>
-                        <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Agendado: {new Date(matrix.revisitDate).toLocaleDateString()}</span>
-                        {matrix.creatorEmail && <span style={{ fontSize: '0.7rem', color: '#888' }}>{matrix.creatorEmail.split('@')[0]}</span>}
-                      </div>
-
-                      <button 
-                        onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
-                        className="btn btn-primary" 
-                        style={{ marginTop: '1rem', width: '100%', padding: '0.6rem', fontSize: '0.9rem' }}
-                      >
-                        <MapPin size={16} /> Obter Rota
-                      </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: 'var(--border-radius-sm)', marginTop: '0.75rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)' }}>{new Date(matrix.revisitDate).toLocaleDateString()}</span>
+                      <span style={{ fontSize: '0.75rem', color: statusColor }}>{statusText}</span>
                     </div>
+
+                    <button 
+                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
+                      className="btn btn-primary" 
+                      style={{ marginTop: '0.75rem', width: '100%', padding: '0.5rem', fontSize: '0.85rem' }}
+                    >
+                      <MapPin size={14} /> Obter Rota
+                    </button>
                   </div>
                 );
               })}
