@@ -12,6 +12,7 @@ import { MatricesList } from './pages/MatricesList';
 import { Alerts } from './pages/Alerts';
 import { Settings } from './pages/Settings';
 import { EditMatrix } from './pages/EditMatrix';
+import { Collections } from './pages/Collections';
 
 // Auth Guard Component
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -41,6 +42,7 @@ function App() {
             <Route path="matrices" element={<MatricesList />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="coletas" element={<Collections />} />
             <Route path="register" element={<RegisterMatrix />} />
             <Route path="edit/:id" element={<EditMatrix />} />
           </Route>

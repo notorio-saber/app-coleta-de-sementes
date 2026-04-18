@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, Map as MapIcon, Navigation, Archive, Settings, Bell } from 'lucide-react';
+import { Home, Map as MapIcon, Navigation, Archive, Settings, Bell, ClipboardList } from 'lucide-react';
 
 export function Layout() {
   return (
@@ -21,9 +21,14 @@ export function Layout() {
           <img src="/logo.png" alt="Mascote" style={{ height: '40px', width: '40px', objectFit: 'contain', borderRadius: '15px', backgroundColor: 'var(--surface-elevated)' }} />
           <h1 style={{ fontSize: '1.3rem', margin: 0, color: 'var(--primary-color)' }}>SeedDesk</h1>
         </div>
-        <NavLink to="/alerts" style={{ color: 'var(--text-muted)' }}>
-           <Bell size={24} />
-        </NavLink>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <NavLink to="/alerts" style={{ color: 'var(--text-muted)' }}>
+             <Bell size={24} />
+          </NavLink>
+          <NavLink to="/settings" style={{ color: 'var(--text-muted)' }}>
+             <Settings size={24} />
+          </NavLink>
+        </div>
       </header>
 
       <main className="main-content">
@@ -35,6 +40,10 @@ export function Layout() {
           <Home />
           <span>Início</span>
         </NavLink>
+        <NavLink to="/coletas" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <ClipboardList />
+          <span>Coletas</span>
+        </NavLink>
         <NavLink to="/map" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <MapIcon />
           <span>Mapa</span>
@@ -45,11 +54,7 @@ export function Layout() {
         </NavLink>
         <NavLink to="/matrices" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Archive />
-          <span>Matrizes</span>
-        </NavLink>
-        <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Settings />
-          <span>Ajustes</span>
+          <span>Acervo</span>
         </NavLink>
       </nav>
     </div>

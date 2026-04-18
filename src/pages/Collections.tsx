@@ -1,0 +1,256 @@
+import { useState, useEffect } from 'react';
+import { useTeam } from '../context/TeamContext';
+import { useAuth } from '../context/AuthContext';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { Plus, Save, Trash2, TrendingUp } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
+interface MatrixOption {
+  id: string;
+  commonName: string;
+}
+
+interface HarvestItem {
+  matrixId: string;
+  commonName: string;
+  weightKg: string;
+}
+
+export function Collections() {
+  const { activeTeam } = useTeam();
+  const { user } = useAuth();
+  
+  const [matrices, setMatrices] = useState<MatrixOption[]>([]);
+  const [harvests, setHarvests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Form State
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [items, setItems] = useState<HarvestItem[]>([]);
+  const [submitLoading, setSubmitLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!activeTeam) return;
+      try {
+        setLoading(true);
+        // Load Matrices for options
+        const qM = query(collection(db, 'matrices'), where('teamId', '==', activeTeam.id));
+        const snapM = await getDocs(qM);
+        const mData = snapM.docs.map(d => ({ id: d.id, commonName: d.data().commonName || 'Sem nome' }));
+        setMatrices(mData);
+        
+        // Load Harvests
+        const qH = query(collection(db, 'harvests'), where('teamId', '==', activeTeam.id));
+        const snapH = await getDocs(qH);
+        const hData = snapH.docs.map(d => ({ id: d.id, ...d.data() as any }));
+        // Sort by newest
+        hData.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setHarvests(hData);
+        
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [activeTeam]);
+
+  const handleAddItem = () => {
+    if (matrices.length === 0) return;
+    setItems([...items, { matrixId: matrices[0].id, commonName: matrices[0].commonName, weightKg: '' }]);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateItem = (index: number, field: keyof HarvestItem, value: string) => {
+    const newItems = [...items];
+    if (field === 'matrixId') {
+      const selected = matrices.find(m => m.id === value);
+      newItems[index].matrixId = value;
+      newItems[index].commonName = selected?.commonName || '';
+    } else {
+      newItems[index] = { ...newItems[index], [field]: value };
+    }
+    setItems(newItems);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTeam || !user || items.length === 0) return;
+    if (items.some(i => !i.weightKg || parseFloat(i.weightKg) <= 0)) {
+      alert('Verifique se todos os itens têm um peso maior que zero.');
+      return;
+    }
+
+    setSubmitLoading(true);
+    let totalKg = 0;
+    const finalItems = items.map(i => {
+      const kg = parseFloat(i.weightKg);
+      totalKg += kg;
+      return { ...i, weightKg: kg };
+    });
+
+    try {
+      const newDoc = {
+        teamId: activeTeam.id,
+        operatorId: user.uid,
+        operatorEmail: user.email,
+        date,
+        totalKg,
+        items: finalItems,
+        timestamp: serverTimestamp()
+      };
+      
+      const docRef = await addDoc(collection(db, 'harvests'), newDoc);
+      
+      setHarvests([{ id: docRef.id, ...newDoc }, ...harvests]);
+      setIsFormOpen(false);
+      setItems([]);
+      alert('Coleta registrada som sucesso!');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar comanda.');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  // Helper for Chart
+  const chartData = [...harvests].reverse().reduce((acc: any[], curr) => {
+    const existing = acc.find(x => x.date === curr.date);
+    if (existing) {
+      existing.kg += curr.totalKg;
+    } else {
+      acc.push({ date: curr.date, kg: curr.totalKg });
+    }
+    return acc;
+  }, []);
+
+  return (
+    <div style={{ paddingBottom: '80px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ color: 'var(--primary-color)', margin: 0 }}>Desempenho & Coletas</h2>
+      </div>
+
+      {!isFormOpen ? (
+        <button className="btn btn-primary" style={{ width: '100%', marginBottom: '1.5rem' }} onClick={() => setIsFormOpen(true)}>
+          <Plus size={18} /> Lançar Nova Comanda
+        </button>
+      ) : (
+        <div className="card electric-card animate-entry" style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ marginBottom: '1rem', color: 'var(--primary-light)' }}>Nova Coleta do Dia</h3>
+          <form onSubmit={handleSubmit}>
+            <div className="input-group">
+              <label>Data</label>
+              <input type="date" required className="input" value={date} onChange={e => setDate(e.target.value)} />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Espécies Coletadas (Kg)</label>
+              
+              {items.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                  <select 
+                    className="select" 
+                    style={{ flex: 2 }}
+                    value={item.matrixId} 
+                    onChange={e => handleUpdateItem(idx, 'matrixId', e.target.value)}
+                  >
+                    {matrices.map(m => (
+                      <option key={m.id} value={m.id}>{m.commonName}</option>
+                    ))}
+                  </select>
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    required 
+                    placeholder="Qtd (Kg)" 
+                    className="input" 
+                    style={{ flex: 1 }}
+                    value={item.weightKg}
+                    onChange={e => handleUpdateItem(idx, 'weightKg', e.target.value)}
+                  />
+                  <button type="button" className="btn btn-danger" style={{ padding: '0.75rem' }} onClick={() => handleRemoveItem(idx)}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+
+              <button type="button" className="btn btn-secondary" style={{ width: '100%', marginTop: '0.5rem', borderStyle: 'dashed' }} onClick={handleAddItem}>
+                <Plus size={16} /> Adicionar Espécie na Comanda
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+              <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setIsFormOpen(false)}>Cancelar</button>
+              <button type="submit" className="btn btn-primary" style={{ flex: 2 }} disabled={submitLoading || items.length === 0}>
+                {submitLoading ? 'Salvando...' : <><Save size={18} /> Salvar Comanda</>}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Gráfico de Desempenho */}
+      {harvests.length > 0 && (
+        <div className="card animate-entry delay-50" style={{ padding: '1.5rem 1rem' }}>
+           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+             <TrendingUp size={20} color="var(--primary-color)" /> Produtividade Diária (Kg)
+           </h3>
+           <div style={{ width: '100%', height: '200px' }}>
+             <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorKg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" tick={{fontSize: 10, fill: 'var(--text-muted)'}} />
+                  <YAxis tick={{fontSize: 10, fill: 'var(--text-muted)'}} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--surface-color)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
+                  <Area type="monotone" dataKey="kg" stroke="var(--primary-color)" fillOpacity={1} fill="url(#colorKg)" />
+                </AreaChart>
+             </ResponsiveContainer>
+           </div>
+        </div>
+      )}
+
+      {/* Histórico das Comandas */}
+      <h3 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.1rem' }}>Histórico da Equipe</h3>
+      {loading ? (
+        <p className="text-muted">Carregando coletas...</p>
+      ) : harvests.length === 0 ? (
+        <p className="text-muted">Nenhuma coleta registrada ainda. Lance a primeira comanda!</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {harvests.map((h, i) => (
+             <div key={h.id || i} className="card animate-entry" style={{ animationDelay: `${i * 50}ms` }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+                 <span style={{ fontWeight: 'bold' }}>{new Date(h.date).toLocaleDateString()}</span>
+                 <span style={{ color: 'var(--primary-light)', fontWeight: 'bold' }}>+{h.totalKg.toFixed(1)} Kg</span>
+               </div>
+               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                 Por: {h.operatorEmail}
+               </div>
+               <div style={{ marginTop: '0.5rem' }}>
+                 {h.items.map((item: any, idx: number) => (
+                   <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '2px 0' }}>
+                     <span>• {item.commonName}</span>
+                     <span>{item.weightKg.toFixed(1)} kg</span>
+                   </div>
+                 ))}
+               </div>
+             </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

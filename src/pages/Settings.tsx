@@ -11,6 +11,8 @@ export function Settings() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingInvite, setLoadingInvite] = useState(false);
+  const [goalLoading, setGoalLoading] = useState(false);
+  const [monthlyGoal, setMonthlyGoal] = useState<string>('');
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +59,24 @@ export function Settings() {
     }
   };
 
+  const handleUpdateGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTeam || !monthlyGoal) return;
+    setGoalLoading(true);
+    try {
+      await updateDoc(doc(db, 'teams', activeTeam.id), {
+        monthlyGoalKg: parseFloat(monthlyGoal)
+      });
+      alert('Meta atualizada com sucesso!');
+      await refreshTeams();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao atualizar meta.');
+    } finally {
+      setGoalLoading(false);
+    }
+  };
+
   return (
     <div style={{ paddingBottom: '60px' }}>
       <h2 style={{ color: 'var(--primary-color)', marginBottom: '1rem' }}>Ajustes e Equipe</h2>
@@ -80,23 +100,44 @@ export function Settings() {
             )}
 
             {activeTeam.ownerId === user?.uid && (
-              <form onSubmit={handleInviteMember} style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-                <h4 style={{ marginBottom: '0.5rem', fontSize: '0.9rem' }}>Convidar Membro (E-mail do Google)</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <input 
-                    type="email"
-                    required
-                    className="input"
-                    style={{ flex: 1 }}
-                    placeholder="email@gmail.com"
-                    value={inviteEmail}
-                    onChange={e => setInviteEmail(e.target.value)}
-                  />
-                  <button type="submit" className="btn btn-primary" style={{ flexShrink: 0 }} disabled={loadingInvite}>
-                    {loadingInvite ? '...' : 'Adicionar'}
-                  </button>
-                </div>
-              </form>
+              <>
+                <form onSubmit={handleInviteMember} style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                  <h4 style={{ marginBottom: '0.5rem', fontSize: '0.9rem' }}>Convidar Membro (E-mail do Google)</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <input 
+                      type="email"
+                      required
+                      className="input"
+                      style={{ flex: 1 }}
+                      placeholder="email@gmail.com"
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                    />
+                    <button type="submit" className="btn btn-primary" style={{ flexShrink: 0 }} disabled={loadingInvite}>
+                      {loadingInvite ? '...' : 'Adicionar'}
+                    </button>
+                  </div>
+                </form>
+
+                <form onSubmit={handleUpdateGoal} style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                  <h4 style={{ marginBottom: '0.5rem', fontSize: '0.9rem' }}>Definir Meta Mensal (Kg)</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      required
+                      className="input"
+                      style={{ flex: 1 }}
+                      placeholder={`Atual: ${activeTeam.monthlyGoalKg || 0} kg`}
+                      value={monthlyGoal}
+                      onChange={e => setMonthlyGoal(e.target.value)}
+                    />
+                    <button type="submit" className="btn btn-secondary" style={{ flexShrink: 0 }} disabled={goalLoading}>
+                      {goalLoading ? '...' : 'Salvar Meta'}
+                    </button>
+                  </div>
+                </form>
+              </>
             )}
           </div>
         ) : (

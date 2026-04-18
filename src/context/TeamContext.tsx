@@ -9,6 +9,7 @@ export interface Team {
   ownerId: string;
   members: string[]; // uids
   invitedEmails?: string[]; // emails
+  monthlyGoalKg?: number;
 }
 
 interface TeamContextType {

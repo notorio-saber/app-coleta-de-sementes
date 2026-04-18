@@ -11,6 +11,7 @@ export function Dashboard() {
   const [urgentCount, setUrgentCount] = useState(0);
   const [urgentMatrices, setUrgentMatrices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monthlyCollected, setMonthlyCollected] = useState(0);
 
   useEffect(() => {
     async function fetchStats() {
@@ -42,6 +43,28 @@ export function Dashboard() {
         flagged.sort((a,b) => a.diffDays - b.diffDays);
         setUrgentMatrices(flagged);
         setUrgentCount(urgent);
+
+        // Fetch Harvests (Colheitas) to calculate monthly goal progress
+        const qHarvests = query(collection(db, 'harvests'), where('teamId', '==', activeTeam.id));
+        const snapHarvests = await getDocs(qHarvests);
+        
+        let collectedThisMonth = 0;
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        snapHarvests.forEach(doc => {
+          const data = doc.data();
+          if (data.date) {
+             const hDate = new Date(data.date);
+             // handle timezone shift by extracting purely the year/month strings or using UTC logic
+             if (hDate.getUTCMonth() === currentMonth && hDate.getUTCFullYear() === currentYear) {
+                collectedThisMonth += (data.totalKg || 0);
+             }
+          }
+        });
+
+        setMonthlyCollected(collectedThisMonth);
+
       } catch (err) {
         console.error("Error fetching stats:", err);
       } finally {
@@ -82,6 +105,39 @@ export function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* Meta Mensal de Produção */}
+          <div className="card" style={{ marginTop: '1rem', borderTop: '4px solid goldenrod' }}>
+            <h2 style={{ fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+              <span>Progressão Mesal (Kg)</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mês vigente</span>
+            </h2>
+            
+            {activeTeam.monthlyGoalKg && activeTeam.monthlyGoalKg > 0 ? (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-end' }}>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'goldenrod' }}>{monthlyCollected.toFixed(1)} <span style={{ fontSize:'0.8rem' }}>kg</span></span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Meta: {activeTeam.monthlyGoalKg} kg</span>
+                </div>
+                <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--surface-elevated)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    height: '100%', 
+                    width: `${Math.min(100, (monthlyCollected / activeTeam.monthlyGoalKg) * 100)}%`, 
+                    background: 'linear-gradient(to right, #F59E0B, #10B981)', 
+                    transition: 'width 1s ease-in-out' 
+                  }} />
+                </div>
+                <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                  {((monthlyCollected / activeTeam.monthlyGoalKg) * 100).toFixed(1)}% alcançado
+                </p>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+                Nenhuma meta mensal definida ainda. O Gerente da equipe pode ditar a meta em Ajustes.
+              </p>
+            )}
+          </div>
+          
           
           <Link to="/register" style={{ textDecoration: 'none' }}>
             <button className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }}>
