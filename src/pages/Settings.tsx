@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
 import { db } from '../lib/firebase';
-import { collection, addDoc, doc, updateDoc, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { Trash2 } from 'lucide-react';
 
 export function Settings() {
@@ -49,9 +49,13 @@ export function Settings() {
     try {
       const teamRef = doc(db, 'teams', activeTeam.id);
       const emailKey = inviteEmail.trim().toLowerCase();
+      
+      const newRoles = { ...(activeTeam.roles || {}) };
+      newRoles[emailKey] = inviteRole;
+      
       await updateDoc(teamRef, {
         invitedEmails: arrayUnion(emailKey),
-        [`roles.${emailKey}`]: inviteRole
+        roles: newRoles
       });
       alert(`Convite enviado para ${inviteEmail}!`);
       setInviteEmail('');
@@ -70,9 +74,13 @@ export function Settings() {
 
     try {
       const teamRef = doc(db, 'teams', activeTeam.id);
+      
+      const newRoles = { ...(activeTeam.roles || {}) };
+      delete newRoles[emailToRemove];
+      
       await updateDoc(teamRef, {
         invitedEmails: arrayRemove(emailToRemove),
-        [`roles.${emailToRemove}`]: deleteField()
+        roles: newRoles
       });
       alert('Membro removido com sucesso!');
       await refreshTeams();
@@ -86,8 +94,12 @@ export function Settings() {
     if (!activeTeam) return;
     try {
       const teamRef = doc(db, 'teams', activeTeam.id);
+      
+      const newRoles = { ...(activeTeam.roles || {}) };
+      newRoles[email] = newRole as any;
+      
       await updateDoc(teamRef, {
-        [`roles.${email}`]: newRole
+        roles: newRoles
       });
       await refreshTeams();
     } catch (err) {
