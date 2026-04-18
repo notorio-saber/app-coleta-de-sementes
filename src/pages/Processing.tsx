@@ -3,7 +3,8 @@ import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
 import { collection, query, where, getDocs, doc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { CheckCircle2, ChevronRight, Save, Trash2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Save, Trash2, TrendingUp } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function Processing() {
   const { activeTeam } = useTeam();
@@ -125,11 +126,52 @@ export function Processing() {
     }
   };
 
+  const chartData = [...harvests].reverse().reduce((acc: any[], curr) => {
+    const existing = acc.find(x => x.date === curr.date);
+    if (existing) {
+      existing.bruto += curr.totalKg;
+      existing.liquido += (curr.benefitedTotalKg || 0);
+    } else {
+      acc.push({ date: curr.date, bruto: curr.totalKg, liquido: curr.benefitedTotalKg || 0 });
+    }
+    return acc;
+  }, []);
+
   return (
     <div style={{ paddingBottom: '80px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h2 style={{ color: 'var(--primary-color)', margin: 0 }}>Laboratório</h2>
       </div>
+
+      {/* Gráfico de Desempenho */}
+      {harvests.length > 0 && (
+        <div className="card animate-entry delay-50" style={{ padding: '1.5rem 1rem', marginBottom: '1.5rem' }}>
+           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+             <TrendingUp size={20} color="var(--primary-color)" /> Rendimento Bruto vs Beneficiado
+           </h3>
+           <div style={{ width: '100%', height: '200px' }}>
+             <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorBruto" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--text-muted)" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="var(--text-muted)" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorLiquido" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" tick={{fontSize: 10, fill: 'var(--text-muted)'}} />
+                  <YAxis tick={{fontSize: 10, fill: 'var(--text-muted)'}} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--surface-color)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
+                  <Area type="monotone" name="Bruto (Campo)" dataKey="bruto" stroke="var(--text-muted)" fillOpacity={1} fill="url(#colorBruto)" />
+                  <Area type="monotone" name="Beneficiado (Lab)" dataKey="liquido" stroke="var(--primary-color)" fillOpacity={1} fill="url(#colorLiquido)" />
+                </AreaChart>
+             </ResponsiveContainer>
+           </div>
+        </div>
+      )}
 
       <p className="text-muted" style={{ marginBottom: '1rem' }}>Comandas aguardando beneficiamento</p>
 
