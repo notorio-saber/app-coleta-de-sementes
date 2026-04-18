@@ -1,10 +1,27 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, Map as MapIcon, Navigation, Archive, Settings } from 'lucide-react';
+import { Home, Map as MapIcon, Navigation, Archive, Settings, Bell } from 'lucide-react';
 
 export function Layout() {
   return (
-    <div className="layout">
-      <main className="content">
+    <div className="app-container">
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '1rem', 
+        backgroundColor: 'var(--surface-color)', 
+        borderBottom: '1px solid var(--border-color)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000
+      }}>
+        <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary-color)' }}>Sementes</h1>
+        <NavLink to="/" style={{ color: 'var(--text-muted)' }}>
+           <Bell size={24} />
+        </NavLink>
+      </header>
+
+      <main className="main-content">
         <Outlet />
       </main>
       

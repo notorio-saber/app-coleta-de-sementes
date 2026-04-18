@@ -82,7 +82,7 @@ export function Settings() {
             {activeTeam.ownerId === user?.uid && (
               <form onSubmit={handleInviteMember} style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
                 <h4 style={{ marginBottom: '0.5rem', fontSize: '0.9rem' }}>Convidar Membro (E-mail do Google)</h4>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <input 
                     type="email"
                     required
