@@ -14,6 +14,7 @@ import { Settings } from './pages/Settings';
 import { EditMatrix } from './pages/EditMatrix';
 import { Collections } from './pages/Collections';
 import { Processing } from './pages/Processing';
+import { OfflineRecords } from './pages/OfflineRecords';
 
 // Auth Guard Component
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -45,6 +46,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="coletas" element={<Collections />} />
             <Route path="processing" element={<Processing />} />
+            <Route path="sync" element={<OfflineRecords />} />
             <Route path="register" element={<RegisterMatrix />} />
             <Route path="edit/:id" element={<EditMatrix />} />
           </Route>

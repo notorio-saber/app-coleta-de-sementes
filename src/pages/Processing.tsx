@@ -5,6 +5,7 @@ import { collection, query, where, getDocs, doc, updateDoc, deleteField } from '
 import { db } from '../lib/firebase';
 import { CheckCircle2, ChevronRight, Save, Trash2, TrendingUp } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { saveProcessingOffline } from '../lib/offlineSync';
 
 export function Processing() {
   const { activeTeam } = useTeam();
@@ -71,22 +72,42 @@ export function Processing() {
     });
 
     try {
-      await updateDoc(doc(db, 'harvests', h.id), {
-        benefitedTotalKg: totalBenefited,
-        benefitedItems: items,
-        processedBy: user.email,
-        processedAt: new Date().toISOString()
-      });
-      
-      // Update local state
-      setHarvests(harvests.map(hItem => {
-        if (hItem.id === h.id) {
-          return { ...hItem, benefitedTotalKg: totalBenefited, benefitedItems: items, processedBy: user.email };
-        }
-        return hItem;
-      }));
-      setOpenHarvestId(null);
-      alert('Beneficiamento registrado com sucesso!');
+      if (!navigator.onLine) {
+        // Save Offline
+        await saveProcessingOffline({
+          harvestId: h.id,
+          benefitedTotalKg: totalBenefited,
+          benefitedItems: items,
+          processedBy: user.email,
+          processedAt: new Date().toISOString()
+        });
+        
+        setHarvests(harvests.map(hItem => {
+          if (hItem.id === h.id) {
+            return { ...hItem, benefitedTotalKg: totalBenefited, benefitedItems: items, processedBy: user.email, _isOffline: true };
+          }
+          return hItem;
+        }));
+        setOpenHarvestId(null);
+        alert('Você está offline. Beneficiamento salvo no dispositivo e será sincronizado depois!');
+      } else {
+        await updateDoc(doc(db, 'harvests', h.id), {
+          benefitedTotalKg: totalBenefited,
+          benefitedItems: items,
+          processedBy: user.email,
+          processedAt: new Date().toISOString()
+        });
+        
+        // Update local state
+        setHarvests(harvests.map(hItem => {
+          if (hItem.id === h.id) {
+            return { ...hItem, benefitedTotalKg: totalBenefited, benefitedItems: items, processedBy: user.email };
+          }
+          return hItem;
+        }));
+        setOpenHarvestId(null);
+        alert('Beneficiamento registrado com sucesso!');
+      }
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar processamento.');
@@ -191,7 +212,7 @@ export function Processing() {
                    <div>
                      <h3 style={{ margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                        Comanda de Campo 
-                       {isProcessed ? <CheckCircle2 size={16} color="var(--success-color)" /> : <span style={{ fontSize: '0.65rem', backgroundColor: 'var(--warning-color)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Pendente</span>}
+                       {h._isOffline ? <span style={{ fontSize: '0.65rem', backgroundColor: 'var(--warning-color)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Offline</span> : isProcessed ? <CheckCircle2 size={16} color="var(--success-color)" /> : <span style={{ fontSize: '0.65rem', backgroundColor: 'var(--warning-color)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Pendente</span>}
                      </h3>
                      <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                        {new Date(h.date).toLocaleDateString()} • Por: {h.operatorEmail.split('@')[0]}
@@ -233,9 +254,9 @@ export function Processing() {
                            <span style={{ fontSize: '0.85rem', color: 'var(--success-color)' }}>
                              Salvo: {h.benefitedTotalKg.toFixed(1)} kg
                            </span>
-                           <button type="button" onClick={() => handleClearProcess(h)} className="btn btn-danger" style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                           {!h._isOffline && <button type="button" onClick={() => handleClearProcess(h)} className="btn btn-danger" style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                              <Trash2 size={16} /> Zerar
-                           </button>
+                           </button>}
                          </div>
                        )}
                        <button onClick={() => handleSaveProcess(h)} className="btn btn-primary" disabled={submitLoading} style={{ marginLeft: 'auto', padding: '0.5rem 1rem' }}>

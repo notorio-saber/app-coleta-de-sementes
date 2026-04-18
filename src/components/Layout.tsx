@@ -1,9 +1,28 @@
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, Map as MapIcon, Navigation, Archive, Settings, Bell, ClipboardList, FlaskConical } from 'lucide-react';
+import { Home, Map as MapIcon, Navigation, Archive, Settings, Bell, ClipboardList, FlaskConical, CloudOff, Cloud } from 'lucide-react';
 import { useTeam } from '../context/TeamContext';
+import { getOfflineData } from '../lib/offlineSync';
 
 export function Layout() {
   const { userRole } = useTeam();
+  const [offlineCount, setOfflineCount] = useState(0);
+
+  useEffect(() => {
+    const checkOffline = async () => {
+      try {
+        const { matrices, harvests, processings } = await getOfflineData();
+        setOfflineCount(matrices.length + harvests.length + processings.length);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    checkOffline();
+    const interval = setInterval(checkOffline, 5000); // Check every 5s
+    
+    return () => clearInterval(interval);
+  }, []);
   
   return (
     <div className="app-container">
@@ -30,6 +49,10 @@ export function Layout() {
                <Bell size={24} />
             </NavLink>
           )}
+          <NavLink to="/sync" style={{ color: offlineCount > 0 ? 'var(--warning-color)' : 'var(--text-muted)', position: 'relative', display: 'flex', alignItems: 'center' }}>
+             {offlineCount > 0 ? <CloudOff size={24} /> : <Cloud size={24} />}
+             {offlineCount > 0 && <span style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: 'var(--warning-color)', color: '#000', fontSize: '0.6rem', fontWeight: 'bold', padding: '2px 5px', borderRadius: '10px' }}>{offlineCount}</span>}
+          </NavLink>
           <NavLink to="/settings" style={{ color: 'var(--text-muted)' }}>
              <Settings size={24} />
           </NavLink>

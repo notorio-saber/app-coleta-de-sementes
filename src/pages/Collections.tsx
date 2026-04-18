@@ -5,6 +5,7 @@ import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, s
 import { db } from '../lib/firebase';
 import { Plus, Save, Trash2, TrendingUp, Edit } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { saveHarvestOffline } from '../lib/offlineSync';
 
 interface MatrixOption {
   id: string;
@@ -104,21 +105,35 @@ export function Collections() {
         items: finalItems
       };
       
-      if (editingId) {
-        await updateDoc(doc(db, 'harvests', editingId), payload);
-        alert('Coleta atualizada com sucesso!');
-        setHarvests(harvests.map(h => h.id === editingId ? { ...h, ...payload } : h));
+      if (!navigator.onLine) {
+         // Save Offline
+         const newDoc = {
+           ...payload,
+           teamId: activeTeam.id,
+           operatorId: user.uid,
+           operatorEmail: user.email,
+           _isOffline: true
+         };
+         await saveHarvestOffline(newDoc);
+         setHarvests([{ id: `offline-${Date.now()}`, ...newDoc }, ...harvests]);
+         alert('Você está offline. Coleta salva no dispositivo e será sincronizada assim que a conexão for restaurada!');
       } else {
-        const newDoc = {
-          ...payload,
-          teamId: activeTeam.id,
-          operatorId: user.uid,
-          operatorEmail: user.email,
-          timestamp: serverTimestamp()
-        };
-        const docRef = await addDoc(collection(db, 'harvests'), newDoc);
-        setHarvests([{ id: docRef.id, ...newDoc }, ...harvests]);
-        alert('Coleta registrada som sucesso!');
+        if (editingId) {
+          await updateDoc(doc(db, 'harvests', editingId), payload);
+          alert('Coleta atualizada com sucesso!');
+          setHarvests(harvests.map(h => h.id === editingId ? { ...h, ...payload } : h));
+        } else {
+          const newDoc = {
+            ...payload,
+            teamId: activeTeam.id,
+            operatorId: user.uid,
+            operatorEmail: user.email,
+            timestamp: serverTimestamp()
+          };
+          const docRef = await addDoc(collection(db, 'harvests'), newDoc);
+          setHarvests([{ id: docRef.id, ...newDoc }, ...harvests]);
+          alert('Coleta registrada com sucesso!');
+        }
       }
 
       setIsFormOpen(false);
@@ -272,10 +287,13 @@ export function Collections() {
              <div key={h.id || i} className="card animate-entry" style={{ animationDelay: `${i * 50}ms` }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                   <span style={{ fontWeight: 'bold' }}>{new Date(h.date).toLocaleDateString()}</span>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                     <span style={{ fontWeight: 'bold' }}>{new Date(h.date).toLocaleDateString()}</span>
+                     {h._isOffline && <span style={{ fontSize: '0.65rem', backgroundColor: 'var(--warning-color)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Offline</span>}
+                   </div>
                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
-                     <button onClick={() => handleEdit(h)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}><Edit size={14} /></button>
-                     <button onClick={() => handleDelete(h.id)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', padding: 0 }}><Trash2 size={14} /></button>
+                     {!h._isOffline && <button onClick={() => handleEdit(h)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}><Edit size={14} /></button>}
+                     {!h._isOffline && <button onClick={() => handleDelete(h.id)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', padding: 0 }}><Trash2 size={14} /></button>}
                    </div>
                  </div>
                  <div style={{ textAlign: 'right' }}>
