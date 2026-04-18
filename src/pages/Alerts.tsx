@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTeam } from '../context/TeamContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { AlertCircle, Calendar, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle2, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Alerts() {
@@ -105,6 +105,15 @@ export function Alerts() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-color)', padding: '0.5rem', borderRadius: 'var(--border-radius-sm)' }}>
                     <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Data Limite: {new Date(matrix.revisitDate).toLocaleDateString()}</span>
                   </div>
+
+                  {/* Route Button */}
+                  <button 
+                     onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
+                     className="btn btn-primary" 
+                     style={{ marginTop: '1rem', width: '100%', padding: '0.6rem', fontSize: '0.9rem' }}
+                   >
+                     <MapPin size={16} /> Obter Rota Google Maps
+                  </button>
                 </div>
               </div>
             );

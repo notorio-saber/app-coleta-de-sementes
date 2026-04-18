@@ -3,7 +3,7 @@ import { useTeam } from '../context/TeamContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Link } from 'react-router-dom';
-import { Eye, Plus, AlertCircle, Calendar, CheckCircle2 } from 'lucide-react';
+import { Eye, Plus, AlertCircle, Calendar, CheckCircle2, MapPin } from 'lucide-react';
 
 export function Dashboard() {
   const { activeTeam } = useTeam();
@@ -145,6 +145,14 @@ export function Dashboard() {
                         <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Agendado: {new Date(matrix.revisitDate).toLocaleDateString()}</span>
                         {matrix.creatorEmail && <span style={{ fontSize: '0.7rem', color: '#888' }}>{matrix.creatorEmail.split('@')[0]}</span>}
                       </div>
+
+                      <button 
+                        onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
+                        className="btn btn-primary" 
+                        style={{ marginTop: '1rem', width: '100%', padding: '0.6rem', fontSize: '0.9rem' }}
+                      >
+                        <MapPin size={16} /> Obter Rota
+                      </button>
                     </div>
                   </div>
                 );

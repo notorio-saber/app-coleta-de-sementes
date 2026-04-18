@@ -17,23 +17,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 });
 
-// Custom icons based on status
-const greenIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+// Custom Tree Icon
+const treeIcon = new L.DivIcon({
+  html: '<div style="font-size: 28px; line-height: 1; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.4));">🌳</div>',
+  className: 'custom-tree-icon',
+  iconSize: [28, 28],
+  iconAnchor: [14, 28],
+  popupAnchor: [0, -28]
 });
 
-const redIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+const redTreeIcon = new L.DivIcon({
+  html: '<div style="font-size: 28px; line-height: 1; filter: drop-shadow(0px 2px 2px rgba(255,0,0,0.6));">⚠️</div>',
+  className: 'custom-tree-icon',
+  iconSize: [28, 28],
+  iconAnchor: [14, 28],
+  popupAnchor: [0, -28]
 });
 
 export function MapView() {
@@ -75,18 +73,36 @@ export function MapView() {
             <Marker 
               key={matrix.id} 
               position={[matrix.lat, matrix.lng]}
-              icon={isUrgent ? redIcon : greenIcon}
+              icon={isUrgent ? redTreeIcon : treeIcon}
             >
               <Popup>
-                <div style={{ minWidth: '150px' }}>
-                  <h3 style={{ margin: '0 0 5px 0' }}>{matrix.commonName}</h3>
-                  <p style={{ margin: '0 0 5px 0', fontSize: '12px', fontStyle: 'italic' }}>{matrix.scientificName}</p>
-                  <p style={{ margin: '0' }}><strong>Estádio:</strong> {matrix.fruitingStage}</p>
+                <div style={{ minWidth: '160px' }}>
+                  {matrix.photos && matrix.photos.length > 0 && (
+                    <div style={{ width: '100%', height: '80px', marginBottom: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                      <img src={matrix.photos[0]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Matriz" />
+                    </div>
+                  )}
+                  <h3 style={{ margin: '0 0 5px 0', fontSize: '1rem' }}>{matrix.commonName}</h3>
+                  <p style={{ margin: '0 0 5px 0', fontSize: '11px', fontStyle: 'italic', color: '#666' }}>{matrix.scientificName}</p>
+                  <p style={{ margin: '0', fontSize: '12px' }}><strong>Estádio:</strong> {matrix.fruitingStage}</p>
+                  
                   {matrix.revisitDate && (
-                    <p style={{ margin: '5px 0 0 0', color: isUrgent ? 'var(--danger-color)' : 'var(--text-main)' }}>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: isUrgent ? 'var(--danger-color)' : 'inherit' }}>
                       <strong>Revisita:</strong> {new Date(matrix.revisitDate).toLocaleDateString()}
                     </p>
                   )}
+
+                  <button 
+                    onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
+                    style={{ 
+                      marginTop: '10px', width: '100%', padding: '6px', 
+                      backgroundColor: 'var(--primary-color)', color: 'white', 
+                      border: 'none', borderRadius: '4px', cursor: 'pointer',
+                      fontSize: '12px', fontWeight: 'bold'
+                    }}
+                  >
+                    Obter Rota
+                  </button>
                 </div>
               </Popup>
             </Marker>

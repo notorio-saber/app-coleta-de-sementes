@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Download, Image as ImageIcon } from 'lucide-react';
+import { Download, Image as ImageIcon, MapPin, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function MatricesList() {
   const { activeTeam } = useTeam();
   const { user } = useAuth();
   const [matrices, setMatrices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterScope, setFilterScope] = useState<'team'|'mine'>('team');
@@ -37,6 +39,18 @@ export function MatricesList() {
     }
     fetchAll();
   }, [activeTeam]);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`Tem certeza absoluta que deseja APAGAR o registro da árvore "${name}"? Essa ação não pode ser desfeita.`)) {
+      try {
+        await deleteDoc(doc(db, 'matrices', id));
+        setMatrices(prev => prev.filter(m => m.id !== id));
+      } catch (err) {
+        console.error("Erro ao deletar:", err);
+        alert("Falha ao deletar a matriz. Verifique sua conexão.");
+      }
+    }
+  };
 
   const handleExportCSV = () => {
     if (matrices.length === 0) return;
@@ -176,7 +190,7 @@ export function MatricesList() {
 
                  {/* Barra de Progresso do Registro Pessoal */}
                  {matrix.revisitDate && (
-                    <div style={{ marginTop: '1rem', backgroundColor: 'var(--bg-color)', padding: '0.5rem', borderRadius: 'var(--border-radius-sm)' }}>
+                    <div style={{ marginTop: '0.75rem', backgroundColor: 'var(--bg-color)', padding: '0.5rem', borderRadius: 'var(--border-radius-sm)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.75rem', fontWeight: 'bold' }}>
                         <span className="text-muted">Prazo de Visita</span>
                         <span style={{ color: statusColor }}>{diffDays <= 0 ? 'Atrasado' : `Faltam ${diffDays} dias`}</span>
@@ -186,6 +200,31 @@ export function MatricesList() {
                       </div>
                     </div>
                  )}
+
+                 {/* Botões de Ação Universais */}
+                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                   <button 
+                     onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
+                     className="btn btn-primary" 
+                     style={{ flex: 1, padding: '0.6rem', fontSize: '0.85rem' }}
+                   >
+                     <MapPin size={16} /> Navegar
+                   </button>
+                   <button 
+                     onClick={() => navigate(`/edit/${matrix.id}`)}
+                     className="btn btn-secondary" 
+                     style={{ width: 'auto', padding: '0.6rem', fontSize: '0.85rem' }}
+                   >
+                     <Edit size={16} />
+                   </button>
+                   <button 
+                     onClick={() => handleDelete(matrix.id, matrix.commonName)}
+                     className="btn btn-secondary" 
+                     style={{ width: 'auto', padding: '0.6rem', fontSize: '0.85rem', color: 'var(--danger-color)', borderColor: 'var(--danger-color)' }}
+                   >
+                     <Trash2 size={16} />
+                   </button>
+                 </div>
                </div>
              )
            })}
