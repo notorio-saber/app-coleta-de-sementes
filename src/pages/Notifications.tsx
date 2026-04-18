@@ -3,7 +3,7 @@ import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { AlertCircle, Calendar, CheckCircle2, Filter } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle2 } from 'lucide-react';
 
 export function Notifications() {
   const { activeTeam } = useTeam();

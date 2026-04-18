@@ -21,10 +21,6 @@ export function Settings() {
       await addDoc(collection(db, 'teams'), {
         name: newTeamName,
         ownerId: user.uid,
-        members: [user.uid]
-      });
-
-      // User document needs creation/updating potentially, but we rely on teams.members for querying
         members: [user.uid],
         invitedEmails: []
       });
@@ -73,14 +69,6 @@ export function Settings() {
         </button>
       </div>
 
-      <div className="card">
-        <h3>Equipe Atual</h3>
-        {activeTeam ? (
-          <div>
-            <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--primary-color)' }}>{activeTeam.name}</p>
-            <p className="text-muted" style={{ fontSize: '0.875rem' }}>Membros: {activeTeam.members?.length || 1}</p>
-          </div>
-        ) : (
       <div className="card">
         <h3>Equipe Atual</h3>
         {activeTeam ? (
