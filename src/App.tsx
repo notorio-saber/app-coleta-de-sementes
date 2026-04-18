@@ -15,17 +15,23 @@ import { EditMatrix } from './pages/EditMatrix';
 import { Collections } from './pages/Collections';
 import { Processing } from './pages/Processing';
 import { OfflineRecords } from './pages/OfflineRecords';
+import { AdminAccounts } from './pages/AdminAccounts';
+import { InactiveScreen } from './components/InactiveScreen';
 
 // Auth Guard Component
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, dbUser, loading } = useAuth();
 
   if (loading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Carregando...</div>;
   }
 
-  if (!user) {
+  if (!user || !dbUser) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (!dbUser.active) {
+    return <InactiveScreen />;
   }
 
   return <TeamProvider>{children}</TeamProvider>;
@@ -49,6 +55,7 @@ function App() {
             <Route path="sync" element={<OfflineRecords />} />
             <Route path="register" element={<RegisterMatrix />} />
             <Route path="edit/:id" element={<EditMatrix />} />
+            <Route path="admin" element={<AdminAccounts />} />
           </Route>
         </Routes>
       </BrowserRouter>

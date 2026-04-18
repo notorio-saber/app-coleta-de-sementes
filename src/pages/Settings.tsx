@@ -3,10 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
 import { db } from '../lib/firebase';
 import { collection, addDoc, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ShieldAlert } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Settings() {
-  const { signOut, user } = useAuth();
+  const { signOut, user, dbUser } = useAuth();
   const { activeTeam, userTeams, refreshTeams } = useTeam();
   const [newTeamName, setNewTeamName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -133,7 +134,16 @@ export function Settings() {
       <div className="card">
         <h3>Sua Conta</h3>
         <p className="text-muted">{user?.email}</p>
-        <button className="btn btn-secondary" onClick={signOut} style={{ marginTop: '1rem' }}>
+        
+        {dbUser?.isAdmin && (
+          <Link to="/admin" style={{ textDecoration: 'none' }}>
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', backgroundColor: 'var(--warning-color)' }}>
+              <ShieldAlert size={18} /> Painel de Controle de Contas (Ativação)
+            </button>
+          </Link>
+        )}
+
+        <button className="btn btn-secondary" onClick={signOut} style={{ width: '100%', marginTop: '1rem' }}>
           Sair da Conta
         </button>
       </div>
