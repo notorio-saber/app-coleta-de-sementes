@@ -82,6 +82,20 @@ export function Settings() {
     }
   };
 
+  const handleUpdateUserRole = async (email: string, newRole: string) => {
+    if (!activeTeam) return;
+    try {
+      const teamRef = doc(db, 'teams', activeTeam.id);
+      await updateDoc(teamRef, {
+        [`roles.${email}`]: newRole
+      });
+      await refreshTeams();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao atualizar cargo.');
+    }
+  };
+
   const handleUpdateGoal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTeam || !monthlyGoal) return;
@@ -118,18 +132,31 @@ export function Settings() {
           <div>
             <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--primary-color)' }}>{activeTeam.name}</p>
             <p className="text-muted" style={{ fontSize: '0.875rem' }}>Membros Reais/Logs: {activeTeam.members?.length || 1}</p>
-            {activeTeam.invitedEmails && activeTeam.invitedEmails.length > 0 && (
+            {activeTeam.roles && Object.keys(activeTeam.roles).length > 0 && (
               <div style={{ marginTop: '0.5rem' }}>
                  <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>Lista de E-mails na Nuvem (Ativos/Convites):</p>
                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                   {activeTeam.invitedEmails.map(email => (
+                   {Object.keys(activeTeam.roles).map(email => (
                      <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-color)', padding: '0.5rem 0.75rem', borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                       <div>
+                       <div style={{ flex: 1 }}>
                          <div style={{ fontSize: '0.85rem' }}>{email}</div>
-                         <div style={{ fontSize: '0.7rem', color: 'var(--primary-color)', fontWeight: 'bold', textTransform: 'uppercase' }}>{activeTeam.roles?.[email] || 'coletor'}</div>
+                         {activeTeam.ownerId === user?.uid && activeTeam.ownerId !== email ? (
+                           <select 
+                             className="input" 
+                             style={{ padding: '0.25rem', fontSize: '0.75rem', marginTop: '0.25rem', width: 'auto', display: 'inline-block' }}
+                             value={activeTeam.roles?.[email] || 'coletor'}
+                             onChange={(e) => handleUpdateUserRole(email, e.target.value)}
+                           >
+                             <option value="coletor">Coletor</option>
+                             <option value="beneficiador">Beneficiador</option>
+                             <option value="admin">Admin</option>
+                           </select>
+                         ) : (
+                           <div style={{ fontSize: '0.7rem', color: 'var(--primary-color)', fontWeight: 'bold', textTransform: 'uppercase' }}>{activeTeam.roles?.[email] || 'coletor'}</div>
+                         )}
                        </div>
                        {activeTeam.ownerId === user?.uid && activeTeam.ownerId !== email && (
-                         <button onClick={() => handleRemoveMember(email)} className="btn btn-danger" style={{ padding: '0.4rem' }}>
+                         <button onClick={() => handleRemoveMember(email)} className="btn btn-danger" style={{ padding: '0.4rem', marginLeft: '0.5rem' }}>
                            <Trash2 size={14} />
                          </button>
                        )}
