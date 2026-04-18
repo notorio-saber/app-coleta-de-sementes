@@ -87,6 +87,7 @@ export function Settings() {
                     type="email"
                     required
                     className="input"
+                    style={{ flex: 1 }}
                     placeholder="email@gmail.com"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
