@@ -239,23 +239,25 @@ export function Settings() {
         )}
       </div>
 
-      <div className="card">
-        <h3>Criar Nova Equipe</h3>
-        <form onSubmit={handleCreateTeam} style={{ marginTop: '1rem' }}>
-          <div className="input-group">
-            <input 
-              required 
-              className="input" 
-              placeholder="Nome da Equipe" 
-              value={newTeamName}
-              onChange={e => setNewTeamName(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Criando...' : 'Criar Equipe'}
-          </button>
-        </form>
-      </div>
+      {(userTeams.length === 0 || activeTeam?.ownerId === user?.uid) && (
+        <div className="card">
+          <h3>Criar Nova Equipe</h3>
+          <form onSubmit={handleCreateTeam} style={{ marginTop: '1rem' }}>
+            <div className="input-group">
+              <input 
+                required 
+                className="input" 
+                placeholder="Nome da Equipe" 
+                value={newTeamName}
+                onChange={e => setNewTeamName(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'Criando...' : 'Criar Equipe'}
+            </button>
+          </form>
+        </div>
+      )}
 
       {userTeams.length > 1 && (
         <div className="card">

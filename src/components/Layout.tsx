@@ -25,9 +25,11 @@ export function Layout() {
           <h1 style={{ fontSize: '1.3rem', margin: 0, color: 'var(--primary-color)' }}>SeedDesk</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <NavLink to="/alerts" style={{ color: 'var(--text-muted)' }}>
-             <Bell size={24} />
-          </NavLink>
+          {userRole !== 'beneficiador' && (
+            <NavLink to="/alerts" style={{ color: 'var(--text-muted)' }}>
+               <Bell size={24} />
+            </NavLink>
+          )}
           <NavLink to="/settings" style={{ color: 'var(--text-muted)' }}>
              <Settings size={24} />
           </NavLink>
