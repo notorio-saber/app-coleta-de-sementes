@@ -208,7 +208,7 @@ export function MatricesList() {
                      className="btn btn-primary" 
                      style={{ flex: 1, padding: '0.6rem', fontSize: '0.85rem' }}
                    >
-                     <MapPin size={16} /> Navegar
+                     <MapPin size={16} /> Obter Rota
                    </button>
                    <button 
                      onClick={() => navigate(`/edit/${matrix.id}`)}

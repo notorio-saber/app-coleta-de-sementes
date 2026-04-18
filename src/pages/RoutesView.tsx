@@ -133,7 +133,7 @@ export function RoutesView() {
                       className="btn btn-primary"
                       style={{ padding: '0.5rem 1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}
                     >
-                      <Navigation size={18} /> Guiar
+                      <Navigation size={18} /> Obter Rota
                     </a>
                   ) : (
                     <a 

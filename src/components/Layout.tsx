@@ -15,7 +15,10 @@ export function Layout() {
         top: 0,
         zIndex: 1000
       }}>
-        <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary-color)' }}>Sementes</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <img src="/logo.png" alt="Mascote" style={{ height: '32px', objectFit: 'contain' }} />
+          <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary-color)' }}>SeedDesk</h1>
+        </div>
         <NavLink to="/alerts" style={{ color: 'var(--text-muted)' }}>
            <Bell size={24} />
         </NavLink>
