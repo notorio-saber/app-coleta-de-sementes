@@ -142,10 +142,12 @@ export function MatricesList() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
            {filteredData.map((matrix, index) => {
-             // photos or photoBase64s
              const firstPhoto = (matrix.photos && matrix.photos.length > 0) ? matrix.photos[0] : 
                                 (matrix.photoBase64s && matrix.photoBase64s.length > 0) ? matrix.photoBase64s[0] : null;
 
+             const creationDate = matrix.createdAt?.seconds ? new Date(matrix.createdAt.seconds * 1000).toLocaleDateString() : 'N/D';
+             const creatorDisplay = matrix.creatorEmail ? matrix.creatorEmail.split('@')[0] : 'Time';
+             
              let diffDays = 0;
              let progressProgress = 0;
              let statusColor = 'var(--success-color)';
@@ -188,6 +190,12 @@ export function MatricesList() {
                       </div>
                     </div>
                  </div>
+
+                  {/* Informação sobre Criação */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.50rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.50rem' }}>
+                     <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Cadastrado em: {creationDate}</span>
+                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Por: {creatorDisplay}</span>
+                  </div>
 
                  {/* Barra de Progresso do Registro Pessoal */}
                  {matrix.revisitDate && (

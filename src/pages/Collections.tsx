@@ -140,7 +140,7 @@ export function Collections() {
 
       {!isFormOpen ? (
         <button className="btn btn-primary" style={{ width: '100%', marginBottom: '1.5rem' }} onClick={() => setIsFormOpen(true)}>
-          <Plus size={18} /> Lançar Nova Comanda
+          <Plus size={18} /> Lançar nova coleta
         </button>
       ) : (
         <div className="card electric-card animate-entry" style={{ marginBottom: '1.5rem' }}>

@@ -3,7 +3,7 @@ import { useTeam } from '../context/TeamContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Link } from 'react-router-dom';
-import { Eye, Plus, AlertCircle, Calendar, CheckCircle2, MapPin, Image as ImageIcon } from 'lucide-react';
+import { Plus, AlertCircle, Calendar, CheckCircle2, MapPin, Image as ImageIcon } from 'lucide-react';
 
 export function Dashboard() {
   const { activeTeam } = useTeam();
@@ -144,15 +144,6 @@ export function Dashboard() {
               <Plus size={18} /> Nova Matriz
             </button>
           </Link>
-          
-          <div className="card" style={{ marginTop: '1rem' }}>
-            <h2 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Acesso Rápido</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <Link to="/map" className="btn btn-secondary">
-                <Eye size={18} /> Ver no Mapa
-              </Link>
-            </div>
-          </div>
           
           {urgentMatrices.length > 0 && (
             <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
