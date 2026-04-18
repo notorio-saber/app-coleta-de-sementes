@@ -3,7 +3,7 @@ import { useTeam } from '../context/TeamContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Link } from 'react-router-dom';
-import { Eye, Plus, AlertCircle, Calendar, CheckCircle2, MapPin } from 'lucide-react';
+import { Eye, Plus, AlertCircle, Calendar, CheckCircle2, MapPin, Image as ImageIcon } from 'lucide-react';
 
 export function Dashboard() {
   const { activeTeam } = useTeam();
@@ -120,8 +120,20 @@ export function Dashboard() {
                   statusText = `${diffDays} dias`;
                 }
 
+                const firstPhoto = (matrix.photos && matrix.photos.length > 0) ? matrix.photos[0] : 
+                                   (matrix.photoBase64s && matrix.photoBase64s.length > 0) ? matrix.photoBase64s[0] : null;
+
                 return (
                   <div key={matrix.id} className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', borderTop: `4px solid ${statusColor}`, paddingTop: '1.5rem' }}>
+                    
+                    <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--border-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {firstPhoto ? (
+                        <img src={firstPhoto} alt="Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <ImageIcon size={24} color="#888" />
+                      )}
+                    </div>
+
                     <div style={{ flex: 1, width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>

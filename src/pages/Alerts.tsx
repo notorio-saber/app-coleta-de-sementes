@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTeam } from '../context/TeamContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { AlertCircle, Calendar, CheckCircle2, MapPin } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle2, MapPin, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Alerts() {
@@ -80,15 +80,27 @@ export function Alerts() {
               statusText = `${diffDays} dias`;
             }
 
+            const firstPhoto = (matrix.photos && matrix.photos.length > 0) ? matrix.photos[0] : 
+                               (matrix.photoBase64s && matrix.photoBase64s.length > 0) ? matrix.photoBase64s[0] : null;
+
             return (
               <div key={matrix.id} className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', borderTop: `4px solid ${statusColor}`, paddingTop: '1.5rem' }}>
-                <div style={{ flex: 1, width: '100%' }}>
+                
+                <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--border-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {firstPhoto ? (
+                    <img src={firstPhoto} alt="Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <ImageIcon size={24} color="#888" />
+                  )}
+                </div>
+
+                <div style={{ flex: 1, width: '100%', minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>{matrix.commonName}</h3>
-                      <p className="text-muted" style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>{matrix.scientificName}</p>
+                      <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
+                      <p className="text-muted" style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{matrix.scientificName}</p>
                     </div>
-                    <Icon color={statusColor} size={24} />
+                    <Icon color={statusColor} size={24} style={{ flexShrink: 0, marginLeft: '0.5rem' }} />
                   </div>
                   
                   {/* Barra Progressiva */}
