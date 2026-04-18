@@ -7,6 +7,7 @@ import { RegisterMatrix } from './pages/RegisterMatrix';
 
 import { Dashboard } from './pages/Dashboard';
 import { MapView } from './pages/MapView';
+import { RoutesView } from './pages/RoutesView';
 import { Notifications } from './pages/Notifications';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
@@ -35,6 +36,7 @@ function App() {
           <Route path="/" element={<AuthGuard><Layout /></AuthGuard>}>
             <Route index element={<Dashboard />} />
             <Route path="map" element={<MapView />} />
+            <Route path="routes" element={<RoutesView />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />

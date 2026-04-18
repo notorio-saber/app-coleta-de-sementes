@@ -7,7 +7,8 @@ export interface Team {
   id: string;
   name: string;
   ownerId: string;
-  members: string[];
+  members: string[]; // uids
+  invitedEmails?: string[]; // emails
 }
 
 interface TeamContextType {
@@ -27,7 +28,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchTeams = async () => {
-    if (!user) {
+    if (!user || !user.email) {
       setUserTeams([]);
       setActiveTeam(null);
       setLoading(false);
@@ -36,40 +37,24 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true);
-      // Get the user document which contains the list of team IDs
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
       
-      let teamsToFetch: string[] = [];
+      const qMembers = query(collection(db, 'teams'), where('members', 'array-contains', user.uid));
+      const qInvites = query(collection(db, 'teams'), where('invitedEmails', 'array-contains', user.email));
+      
+      const [snapMembers, snapInvites] = await Promise.all([
+        getDocs(qMembers),
+        getDocs(qInvites)
+      ]);
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        teamsToFetch = userData.teams || [];
-      } else {
-        // If query by ownerId instead of checking user's teams directly
-        const q = query(collection(db, 'teams'), where('members', 'array-contains', user.uid));
-        const querySnapshot = await getDocs(q);
-        const fetchedTeams = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Team));
-        setUserTeams(fetchedTeams);
-        if (fetchedTeams.length > 0 && !activeTeam) {
-            setActiveTeam(fetchedTeams[0]);
-        }
-        setLoading(false);
-        return;
-      }
+      const teamsMap = new Map<string, Team>();
+      snapMembers.docs.forEach(doc => teamsMap.set(doc.id, { id: doc.id, ...doc.data() } as Team));
+      snapInvites.docs.forEach(doc => teamsMap.set(doc.id, { id: doc.id, ...doc.data() } as Team));
 
-      if (teamsToFetch.length > 0) {
-          // Fetch each team (Firestore 'in' query supports max 10, so fetch individually or use array-contains on teams collection)
-          const q = query(collection(db, 'teams'), where('members', 'array-contains', user.uid));
-          const querySnapshot = await getDocs(q);
-          const fetchedTeams = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Team));
-          setUserTeams(fetchedTeams);
-          if (fetchedTeams.length > 0 && (!activeTeam || !fetchedTeams.find(t => t.id === activeTeam.id))) {
-              setActiveTeam(fetchedTeams[0]);
-          }
-      } else {
-          setUserTeams([]);
-          setActiveTeam(null);
+      const teamsData = Array.from(teamsMap.values());
+      
+      setUserTeams(teamsData);
+      if (teamsData.length > 0 && !activeTeam) {
+          setActiveTeam(teamsData[0]);
       }
     } catch (error) {
       console.error('Error fetching teams:', error);

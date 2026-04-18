@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, Map as MapIcon, Bell, ClipboardList, Settings } from 'lucide-react';
+import { Home, Map as MapIcon, Bell, ClipboardList, Settings, Navigation } from 'lucide-react';
 
 export function Layout() {
   return (
@@ -16,6 +16,10 @@ export function Layout() {
         <NavLink to="/map" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <MapIcon />
           <span>Mapa</span>
+        </NavLink>
+        <NavLink to="/routes" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <Navigation />
+          <span>Rotas</span>
         </NavLink>
         <NavLink to="/notifications" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Bell />

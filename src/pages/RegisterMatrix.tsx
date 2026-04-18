@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useTeam } from '../context/TeamContext';
+import { useAuth } from '../context/AuthContext';
 import { MapPin, Camera, Save } from 'lucide-react';
 import { saveMatrixOffline } from '../lib/offlineSync';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -9,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 
 export function RegisterMatrix() {
   const { activeTeam } = useTeam();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -81,6 +83,8 @@ export function RegisterMatrix() {
       lng: location.lng,
       revisitDate: revisitDate.toISOString(),
       teamId: activeTeam.id,
+      creatorId: user?.uid,
+      creatorEmail: user?.email,
       photoBase64s: photos
     };
 
@@ -107,7 +111,9 @@ export function RegisterMatrix() {
           photos: photoUrls,
           createdAt: serverTimestamp(),
           revisitDate: revisitDate.toISOString(),
-          teamId: activeTeam.id
+          teamId: activeTeam.id,
+          creatorId: user?.uid,
+          creatorEmail: user?.email
         });
         alert('Matriz salva com sucesso!');
       } else {

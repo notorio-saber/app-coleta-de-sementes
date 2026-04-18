@@ -62,7 +62,9 @@ export const syncOfflineData = async () => {
         photos: photoUrls,
         createdAt: serverTimestamp(),
         revisitDate: record.revisitDate,
-        teamId: record.teamId
+        teamId: record.teamId,
+        creatorId: record.creatorId || null,
+        creatorEmail: record.creatorEmail || null
       };
 
       await addDoc(collection(db, 'matrices'), matrixData);
