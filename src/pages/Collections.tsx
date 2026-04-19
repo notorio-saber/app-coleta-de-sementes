@@ -113,6 +113,11 @@ export function Collections() {
             await updateHarvestOffline(localId, payload);
             alert('Coleta offline atualizada com sucesso!');
             setHarvests(harvests.map(h => h.id === editingId ? { ...h, ...payload } : h));
+         } else if (editingId) {
+            // Se tentar editar registro online mas caiu a conexão
+            alert('Você está offline e não pode editar registros que já estão na nuvem.');
+            setSubmitLoading(false);
+            return;
          } else {
             const newDoc = {
               ...payload,
@@ -168,7 +173,7 @@ export function Collections() {
   const handleDelete = async (id: string, isOffline: boolean = false) => {
     if (!window.confirm("Essa exclusão é permanente. Tem certeza que deseja apagar os registros desta coleta?")) return;
     try {
-      if (isOffline) {
+      if (isOffline && id.toString().startsWith('offline-')) {
         const localId = parseInt(id.replace('offline-', ''));
         await deleteOfflineRecord('offline-harvests', localId);
       } else {
@@ -184,7 +189,7 @@ export function Collections() {
   const handleDeliver = async (id: string, isOffline: boolean = false) => {
     if (!window.confirm("Confirmar o envio desta carga para o laboratório?")) return;
     try {
-      if (isOffline) {
+      if (isOffline && id.toString().startsWith('offline-')) {
          const localId = parseInt(id.replace('offline-', ''));
          await updateHarvestOffline(localId, { deliveryStatus: 'entregue' });
       } else {

@@ -157,6 +157,7 @@ export const syncOfflineData = async () => {
       delete harvestData.localId;
       delete harvestData.synced;
       delete harvestData.createdAt;
+      delete harvestData._isOffline;
       
       harvestData.timestamp = serverTimestamp();
       
