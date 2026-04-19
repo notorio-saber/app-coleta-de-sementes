@@ -96,8 +96,28 @@ export function RoutesView() {
             const firstPhoto = (matrix.photos && matrix.photos.length > 0) ? matrix.photos[0] : 
                                (matrix.photoBase64s && matrix.photoBase64s.length > 0) ? matrix.photoBase64s[0] : null;
 
+             let diffDays = 0;
+             let progressProgress = 0;
+             let statusColor = 'var(--success-color)';
+             let isUrgent = false;
+             
+             if (matrix.revisitDate) {
+               const revDate = new Date(matrix.revisitDate);
+               const today = new Date();
+               diffDays = Math.ceil((revDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+               progressProgress = Math.min(100, Math.max(0, 100 - (diffDays / 60) * 100));
+               
+               if (diffDays <= 7) isUrgent = true;
+               if (diffDays <= 0) {
+                 statusColor = 'var(--danger-color)';
+                 progressProgress = 100;
+               } else if (diffDays <= 7) {
+                 statusColor = 'var(--warning-color)';
+               }
+             }
+
             return (
-              <div key={matrix.id} className="card animate-entry" style={{ animationDelay: `${index * 50}ms`, padding: '0.75rem' }}>
+              <div key={matrix.id} className={`card ${isUrgent ? 'electric-card' : ''} animate-entry`} style={{ animationDelay: `${index * 50}ms`, padding: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ width: '55px', height: '55px', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--surface-elevated)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {firstPhoto ? (
@@ -109,13 +129,35 @@ export function RoutesView() {
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ overflow: 'hidden' }}>
-                        <h3 style={{ fontSize: '1rem', margin: '0 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
-                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.scientificName}</p>
-                      </div>
+                       <h3 style={{ fontSize: '1rem', margin: '0 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
+                       {matrix.matrixCode && <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{matrix.matrixCode}</span>}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <p style={{ margin: '0', fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.scientificName}</p>
+                      <span style={{ fontSize: '0.7rem', color: statusColor, fontWeight: 500, padding: '2px 6px', background: `${statusColor}15`, borderRadius: '4px' }}>{matrix.fruitingStage}</span>
                     </div>
                   </div>
                 </div>
+
+                 {/* Observações */}
+                 {matrix.notes && (
+                    <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '4px' }}>
+                      <strong style={{ color: 'var(--text-dim)' }}>Obs:</strong> {matrix.notes}
+                    </div>
+                 )}
+
+                 {/* Barra de Progresso */}
+                 {matrix.revisitDate && (
+                    <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.7rem', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--text-dim)' }}>Prazo ({diffDays} dias)</span>
+                        <span style={{ color: statusColor }}>{diffDays <= 0 ? 'Atrasado' : `${diffDays} dias restantes`}</span>
+                      </div>
+                      <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--surface-elevated)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${progressProgress}%`, background: 'linear-gradient(to right, #10B981, #F59E0B, #EF4444)', transition: 'width 0.3s ease' }} />
+                      </div>
+                    </div>
+                 )}
 
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                   {userLoc ? (

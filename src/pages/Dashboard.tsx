@@ -139,6 +139,12 @@ export function Dashboard() {
                     Peso Bruto: {monthlyRawCollected.toFixed(1)} kg
                   </span>
                 </div>
+                {monthlyCollected > activeTeam.monthlyGoalKg && (
+                  <div style={{ marginTop: '0.75rem', padding: '0.5rem', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid var(--success-color)', borderRadius: 'var(--border-radius-sm)', textAlign: 'center', color: 'var(--success-color)' }}>
+                    <span style={{ fontWeight: 'bold' }}>Meta Batida! </span>
+                    <span style={{ fontSize: '0.85rem' }}>Excedente: {(monthlyCollected - activeTeam.monthlyGoalKg).toFixed(1)} kg</span>
+                  </div>
+                )}
               </div>
             ) : (
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>

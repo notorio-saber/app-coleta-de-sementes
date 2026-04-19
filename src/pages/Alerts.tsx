@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTeam } from '../context/TeamContext';
+import { useAuth } from '../context/AuthContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { AlertCircle, Calendar, CheckCircle2, MapPin, Image as ImageIcon } from 'lucide-react';
@@ -7,7 +8,9 @@ import { useNavigate } from 'react-router-dom';
 
 export function Alerts() {
   const { activeTeam } = useTeam();
+  const { user } = useAuth();
   const [matrices, setMatrices] = useState<any[]>([]);
+  const [newAddedMatrices, setNewAddedMatrices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -21,9 +24,21 @@ export function Alerts() {
         
         const now = new Date();
         const flagged: any[] = [];
+        const freshlyAdded: any[] = [];
+        
+        const lastViewedStr = localStorage.getItem(`lastViewedAlerts_${user?.uid}`);
+        const lastViewed = lastViewedStr ? new Date(lastViewedStr).getTime() : Date.now() - 24*60*60*1000;
         
         snapshot.docs.forEach(doc => {
           const data = doc.data();
+          
+          if (data.creatorId && data.creatorId !== user?.uid && data.createdAt) {
+             const createdAtMs = data.createdAt.seconds ? data.createdAt.seconds * 1000 : new Date(data.createdAt).getTime();
+             if (createdAtMs > lastViewed) {
+                freshlyAdded.push({ id: doc.id, ...data });
+             }
+          }
+
           if (data.revisitDate) {
             const revDate = new Date(data.revisitDate);
             const diffTime = revDate.getTime() - now.getTime();
@@ -38,6 +53,7 @@ export function Alerts() {
 
         flagged.sort((a,b) => a.diffDays - b.diffDays);
         setMatrices(flagged);
+        setNewAddedMatrices(freshlyAdded);
       } catch (err) {
         console.error(err);
       } finally {
@@ -56,11 +72,51 @@ export function Alerts() {
 
       {loading ? (
         <p>Procurando alertas...</p>
-      ) : matrices.length === 0 ? (
-        <p className="text-muted">Nenhum registro urgente ou próximo do prazo para sua equipe!</p>
+      ) : (matrices.length === 0 && newAddedMatrices.length === 0) ? (
+        <p className="text-muted">Nenhum registro recente ou próximo do prazo para sua equipe!</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {matrices.map((matrix, index) => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          
+          {newAddedMatrices.length > 0 && (
+            <div>
+              <h3 style={{ color: 'var(--success-color)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                <CheckCircle2 size={20} /> Matrizes Recém-Adicionadas
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {newAddedMatrices.map((matrix, index) => {
+                  const firstPhoto = (matrix.photos && matrix.photos.length > 0) ? matrix.photos[0] : 
+                                     (matrix.photoBase64s && matrix.photoBase64s.length > 0) ? matrix.photoBase64s[0] : null;
+
+                  return (
+                    <div key={matrix.id} className="card animate-entry" style={{ animationDelay: `${index * 50}ms`, padding: '0.75rem', borderLeft: '4px solid var(--success-color)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ width: '55px', height: '55px', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--surface-elevated)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {firstPhoto ? (
+                            <img src={firstPhoto} alt="Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <ImageIcon size={20} color="var(--text-muted)" />
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h3 style={{ fontSize: '1rem', margin: '0 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{matrix.commonName}</h3>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Adicionada por {matrix.creatorEmail?.split('@')[0]}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} className="btn btn-secondary" style={{ marginTop: '0.75rem', width: '100%', padding: '0.5rem', fontSize: '0.85rem' }}>
+                        <MapPin size={14} /> Obter Rota
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {matrices.length > 0 && (
+            <div>
+              <h3 style={{ color: 'var(--warning-color)', marginBottom: '1rem', fontSize: '1.1rem' }}>Revisões Pendentes</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {matrices.map((matrix, index) => {
             const diffDays = matrix.diffDays;
             
             let statusColor = 'var(--success-color)';
@@ -119,6 +175,9 @@ export function Alerts() {
               </div>
             );
           })}
+          </div>
+          </div>
+          )}
         </div>
       )}
     </div>

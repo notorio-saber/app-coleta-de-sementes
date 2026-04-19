@@ -5,7 +5,8 @@ import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, s
 import { db } from '../lib/firebase';
 import { Plus, Save, Trash2, TrendingUp, Edit, Download } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { saveHarvestOffline } from '../lib/offlineSync';
+import { saveHarvestOffline, updateHarvestOffline, deleteOfflineRecord } from '../lib/offlineSync';
+import { Send } from 'lucide-react';
 
 interface MatrixOption {
   id: string;
@@ -107,16 +108,24 @@ export function Collections() {
       
       if (!navigator.onLine) {
          // Save Offline
-         const newDoc = {
-           ...payload,
-           teamId: activeTeam.id,
-           operatorId: user.uid,
-           operatorEmail: user.email,
-           _isOffline: true
-         };
-         await saveHarvestOffline(newDoc);
-         setHarvests([{ id: `offline-${Date.now()}`, ...newDoc }, ...harvests]);
-         alert('Você está offline. Coleta salva no dispositivo e será sincronizada assim que a conexão for restaurada!');
+         if (editingId && editingId.startsWith('offline-')) {
+            const localId = parseInt(editingId.replace('offline-', ''));
+            await updateHarvestOffline(localId, payload);
+            alert('Coleta offline atualizada com sucesso!');
+            setHarvests(harvests.map(h => h.id === editingId ? { ...h, ...payload } : h));
+         } else {
+            const newDoc = {
+              ...payload,
+              teamId: activeTeam.id,
+              operatorId: user.uid,
+              operatorEmail: user.email,
+              deliveryStatus: 'aguardando_entrega',
+              _isOffline: true
+            };
+            const localId = await saveHarvestOffline(newDoc);
+            setHarvests([{ id: `offline-${localId}`, ...newDoc, localId }, ...harvests]);
+            alert('Você está offline. Coleta salva no dispositivo e será sincronizada assim que a conexão for restaurada!');
+         }
       } else {
         if (editingId) {
           await updateDoc(doc(db, 'harvests', editingId), payload);
@@ -128,6 +137,7 @@ export function Collections() {
             teamId: activeTeam.id,
             operatorId: user.uid,
             operatorEmail: user.email,
+            deliveryStatus: 'aguardando_entrega',
             timestamp: serverTimestamp()
           };
           const docRef = await addDoc(collection(db, 'harvests'), newDoc);
@@ -155,14 +165,36 @@ export function Collections() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, isOffline: boolean = false) => {
     if (!window.confirm("Essa exclusão é permanente. Tem certeza que deseja apagar os registros desta coleta?")) return;
     try {
-      await deleteDoc(doc(db, 'harvests', id));
+      if (isOffline) {
+        const localId = parseInt(id.replace('offline-', ''));
+        await deleteOfflineRecord('offline-harvests', localId);
+      } else {
+        await deleteDoc(doc(db, 'harvests', id));
+      }
       setHarvests(harvests.filter(h => h.id !== id));
     } catch (e) {
       console.error(e);
       alert('Erro ao apagar.');
+    }
+  };
+
+  const handleDeliver = async (id: string, isOffline: boolean = false) => {
+    if (!window.confirm("Confirmar o envio desta carga para o laboratório?")) return;
+    try {
+      if (isOffline) {
+         const localId = parseInt(id.replace('offline-', ''));
+         await updateHarvestOffline(localId, { deliveryStatus: 'entregue' });
+      } else {
+         await updateDoc(doc(db, 'harvests', id), { deliveryStatus: 'entregue' });
+      }
+      setHarvests(harvests.map(h => h.id === id ? { ...h, deliveryStatus: 'entregue' } : h));
+      alert('Entrega confirmada! O laboratório já pode visualizar a comanda.');
+    } catch(e) {
+       console.error(e);
+       alert('Erro ao confirmar entrega.');
     }
   };
 
@@ -328,12 +360,19 @@ export function Collections() {
                      {h._isOffline && <span style={{ fontSize: '0.65rem', backgroundColor: 'var(--warning-color)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Offline</span>}
                    </div>
                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
-                     {!h._isOffline && <button onClick={() => handleEdit(h)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}><Edit size={14} /></button>}
-                     {!h._isOffline && <button onClick={() => handleDelete(h.id)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', padding: 0 }}><Trash2 size={14} /></button>}
+                     <button onClick={() => handleEdit(h)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}><Edit size={14} /></button>
+                     <button onClick={() => handleDelete(h.id, h._isOffline)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', padding: 0 }}><Trash2 size={14} /></button>
                    </div>
                  </div>
                  <div style={{ textAlign: 'right' }}>
-                   <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Bruto (Campo): {h.totalKg.toFixed(1)} Kg</div>
+                   {(!h.deliveryStatus || h.deliveryStatus === 'aguardando_entrega') ? (
+                      <button onClick={() => handleDeliver(h.id, h._isOffline)} className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Send size={12} /> Confirmar Envio
+                      </button>
+                   ) : (
+                      <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--success-color)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Carga Entregue</span>
+                   )}
+                   <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginTop: '4px' }}>Bruto (Campo): {h.totalKg.toFixed(1)} Kg</div>
                    <div style={{ color: 'var(--primary-light)', fontWeight: 'bold' }}>
                      Processado: {h.benefitedTotalKg !== undefined ? h.benefitedTotalKg.toFixed(1) : '0.0'} Kg
                    </div>

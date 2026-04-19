@@ -2,11 +2,16 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Home, Map as MapIcon, Navigation, Archive, Settings, Bell, ClipboardList, FlaskConical, CloudOff, Cloud } from 'lucide-react';
 import { useTeam } from '../context/TeamContext';
+import { useAuth } from '../context/AuthContext';
 import { getOfflineData } from '../lib/offlineSync';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export function Layout() {
-  const { userRole } = useTeam();
+  const { activeTeam, userRole } = useTeam();
+  const { user } = useAuth();
   const [offlineCount, setOfflineCount] = useState(0);
+  const [newMatricesCount, setNewMatricesCount] = useState(0);
 
   useEffect(() => {
     const checkOffline = async () => {
@@ -23,6 +28,36 @@ export function Layout() {
     
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!activeTeam || !user) return;
+    const q = query(collection(db, 'matrices'), where('teamId', '==', activeTeam.id));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+       const lastViewedStr = localStorage.getItem(`lastViewedAlerts_${user.uid}`);
+       // Subtract 24 hours just to have an initial state if first time, or use 0
+       const lastViewed = lastViewedStr ? new Date(lastViewedStr).getTime() : Date.now() - 24*60*60*1000;
+       
+       let count = 0;
+       snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.creatorId && data.creatorId !== user.uid && data.createdAt) {
+             const createdAt = data.createdAt.seconds ? data.createdAt.seconds * 1000 : new Date(data.createdAt).getTime();
+             if (createdAt > lastViewed) {
+                count++;
+             }
+          }
+       });
+       setNewMatricesCount(count);
+    });
+    return () => unsubscribe();
+  }, [activeTeam, user]);
+  
+  const handleAlertsClick = () => {
+    if (user) {
+      localStorage.setItem(`lastViewedAlerts_${user.uid}`, new Date().toISOString());
+      setNewMatricesCount(0);
+    }
+  };
   
   return (
     <div className="app-container">
@@ -45,8 +80,9 @@ export function Layout() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {userRole !== 'beneficiador' && (
-            <NavLink to="/alerts" style={{ color: 'var(--text-muted)' }}>
+            <NavLink to="/alerts" onClick={handleAlertsClick} style={{ color: 'var(--text-muted)', position: 'relative', display: 'flex', alignItems: 'center' }}>
                <Bell size={24} />
+               {newMatricesCount > 0 && <span style={{ position: 'absolute', top: '-2px', right: '-2px', width: '10px', height: '10px', backgroundColor: 'var(--danger-color)', borderRadius: '50%' }}></span>}
             </NavLink>
           )}
           <NavLink to="/sync" style={{ color: offlineCount > 0 ? 'var(--warning-color)' : 'var(--text-muted)', position: 'relative', display: 'flex', alignItems: 'center' }}>

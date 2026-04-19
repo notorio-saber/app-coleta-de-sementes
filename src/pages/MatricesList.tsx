@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
-import { doc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Download, Image as ImageIcon, MapPin, Edit, Trash2 } from 'lucide-react';
+import { Download, Image as ImageIcon, MapPin, Edit, Trash2, CalendarCheck, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function MatricesList() {
@@ -49,6 +49,43 @@ export function MatricesList() {
         console.error("Erro ao deletar:", err);
         alert("Falha ao deletar a matriz. Verifique sua conexão.");
       }
+    }
+  };
+
+  const handleRegisterVisit = async (matrixId: string, name: string) => {
+    const daysStr = window.prompt(`Registrar visita na matriz "${name}"\nDaqui a quantos dias será a próxima visita?`, "365");
+    if (!daysStr) return;
+    const days = parseInt(daysStr, 10);
+    if (isNaN(days) || days <= 0) {
+      alert("Número de dias inválido.");
+      return;
+    }
+    
+    try {
+      const today = new Date().toISOString();
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + days);
+      const nextDateIso = nextDate.toISOString();
+
+      await updateDoc(doc(db, 'matrices', matrixId), {
+        revisitDate: nextDateIso,
+        visitHistory: arrayUnion(today)
+      });
+      
+      setMatrices(prev => prev.map(m => {
+        if (m.id === matrixId) {
+          return {
+            ...m, 
+            revisitDate: nextDateIso,
+            visitHistory: [...(m.visitHistory || []), today]
+          };
+        }
+        return m;
+      }));
+      alert("Visita registrada! A data da próxima revisão foi atualizada.");
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao registrar visita.");
     }
   };
 
@@ -201,15 +238,36 @@ export function MatricesList() {
                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Por: {creatorDisplay}</span>
                   </div>
 
+                 {/* Observações */}
+                 {matrix.notes && (
+                    <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.03)', padding: '0.5rem', borderRadius: '4px' }}>
+                      <strong style={{ color: 'var(--text-dim)' }}>Obs:</strong> {matrix.notes}
+                    </div>
+                 )}
+
+                 {/* Histórico de Visitas */}
+                 {matrix.visitHistory && matrix.visitHistory.length > 0 && (
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                      <strong style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '2px' }}><History size={12} /> Visitas Anteriores ({matrix.visitHistory.length}):</strong>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {matrix.visitHistory.map((vDate: string, idx: number) => (
+                           <span key={idx} style={{ padding: '2px 6px', backgroundColor: 'var(--surface-color)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                             {new Date(vDate).toLocaleDateString()}
+                           </span>
+                        ))}
+                      </div>
+                    </div>
+                 )}
+
                  {/* Barra de Progresso do Registro Pessoal */}
                  {matrix.revisitDate && (
                     <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.7rem', fontWeight: 600 }}>
-                        <span style={{ color: 'var(--text-dim)' }}>Prazo</span>
-                        <span style={{ color: statusColor }}>{diffDays <= 0 ? 'Atrasado' : `${diffDays} dias`}</span>
+                        <span style={{ color: 'var(--text-dim)' }}>Prazo ({diffDays} dias)</span>
+                        <span style={{ color: statusColor }}>{diffDays <= 0 ? 'Atrasado' : `${diffDays} dias restantes`}</span>
                       </div>
-                      <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--surface-elevated)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${progressProgress}%`, backgroundColor: statusColor, transition: 'width 0.3s ease' }} />
+                      <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--surface-elevated)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${progressProgress}%`, background: 'linear-gradient(to right, #10B981, #F59E0B, #EF4444)', transition: 'width 0.3s ease' }} />
                       </div>
                     </div>
                  )}
@@ -220,8 +278,17 @@ export function MatricesList() {
                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${matrix.lat},${matrix.lng}`, '_blank')} 
                      className="btn btn-primary" 
                      style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}
+                     title="Navegar no GPS"
                    >
                      <MapPin size={14} /> Obter Rota
+                   </button>
+                   <button 
+                     onClick={() => handleRegisterVisit(matrix.id, matrix.commonName)} 
+                     className="btn btn-secondary" 
+                     style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem', display: 'flex', gap: '0.25rem', alignItems: 'center', justifyContent: 'center' }}
+                     title="Registrar nova visita efetuada"
+                   >
+                     <CalendarCheck size={14} /> Visita
                    </button>
                    {userRole !== 'beneficiador' && (
                      <>

@@ -23,9 +23,12 @@ export function Processing() {
       try {
         setLoading(true);
         const q = query(collection(db, 'harvests'), where('teamId', '==', activeTeam.id));
-        const snap = await getDocs(q);
+        const snapshot = await getDocs(q);
         
-        const hData = snap.docs.map(d => ({ id: d.id, ...d.data() as any }));
+        // Filtrar apenas comandas que foram "entregues" da filial de campo para o laboratório
+        const hData = snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() as any }))
+          .filter(h => h.deliveryStatus === 'entregue');
         // Filtrar pendentes (aquelas que o benefitedTotalKg é undefined ou ausente) ou ordenar recentes
         hData.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setHarvests(hData);

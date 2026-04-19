@@ -48,7 +48,19 @@ export const saveHarvestOffline = async (data: any) => {
   const db = await initDB();
   const tx = db.transaction(STORE_HARVESTS, 'readwrite');
   const store = tx.objectStore(STORE_HARVESTS);
-  await store.add({ ...data, synced: false, createdAt: new Date().toISOString() });
+  const id = await store.add({ ...data, synced: false, createdAt: new Date().toISOString() });
+  await tx.done;
+  return id;
+};
+
+export const updateHarvestOffline = async (id: number, data: any) => {
+  const db = await initDB();
+  const tx = db.transaction(STORE_HARVESTS, 'readwrite');
+  const store = tx.objectStore(STORE_HARVESTS);
+  const existing = await store.get(id);
+  if (existing) {
+    await store.put({ ...existing, ...data });
+  }
   await tx.done;
 };
 
