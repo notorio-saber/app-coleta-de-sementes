@@ -30,6 +30,24 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
+      },
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/server\.arcgisonline\.com\/ArcGIS\/rest\/services\/World_Imagery\/MapServer\/tile\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'esri-map-tiles',
+              expiration: {
+                maxEntries: 1000,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       }
     })
   ],
