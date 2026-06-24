@@ -3,8 +3,9 @@ import { useTeam } from '../context/TeamContext';
 import { useAuth } from '../context/AuthContext';
 import { doc, collection, query, where, getDocs, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Download, Image as ImageIcon, MapPin, Edit, Trash2, CalendarCheck, History } from 'lucide-react';
+import { Download, Image as ImageIcon, MapPin, Edit, Trash2, CalendarCheck, History, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { PhotoModal } from '../components/PhotoModal';
 
 export function MatricesList() {
   const { activeTeam, userRole } = useTeam();
@@ -15,6 +16,13 @@ export function MatricesList() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterScope, setFilterScope] = useState<'team'|'mine'>('team');
+  const [filterFruiting, setFilterFruiting] = useState<string>('');
+  const [selectedPhotoMatrix, setSelectedPhotoMatrix] = useState<any>(null);
+
+  const handleCopyCoords = (lat: number, lng: number) => {
+    navigator.clipboard.writeText(`${lat}, ${lng}`);
+    alert('Coordenadas copiadas!');
+  };
 
   useEffect(() => {
     async function fetchAll() {
@@ -128,6 +136,11 @@ export function MatricesList() {
       if (!matchCommon && !matchScientific) return false;
     }
 
+    // 3. Fruiting stage filter
+    if (filterFruiting !== '' && m.fruitingStage !== filterFruiting) {
+      return false;
+    }
+
     return true;
   });
 
@@ -140,15 +153,28 @@ export function MatricesList() {
       </div>
 
       <div className="card" style={{ padding: '1rem', marginBottom: '1rem' }}>
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
            <input 
              type="text" 
              className="input" 
-             style={{ width: '100%' }} 
-             placeholder="Pesquisar por nome comum ou científico..." 
+             style={{ flex: 2 }} 
+             placeholder="Pesquisar por nome..." 
              value={searchTerm}
              onChange={e => setSearchTerm(e.target.value)}
            />
+           <select 
+             className="select" 
+             style={{ flex: 1 }}
+             value={filterFruiting}
+             onChange={e => setFilterFruiting(e.target.value)}
+           >
+             <option value="">Qualquer estágio</option>
+             <option value="Sem frutos">Sem frutos</option>
+             <option value="Flores">Flores</option>
+             <option value="Frutos verdes">Frutos verdes</option>
+             <option value="Quase maduros">Quase maduros</option>
+             <option value="Maduros">Maduros</option>
+           </select>
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -211,7 +237,10 @@ export function MatricesList() {
                <div key={matrix.id} className={`card ${isUrgent ? 'electric-card' : ''} animate-entry`} style={{ animationDelay: `${index * 50}ms`, padding: '0.75rem' }}>
                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     {/* Thumbnail */}
-                    <div style={{ width: '55px', height: '55px', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--surface-elevated)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div 
+                      onClick={() => setSelectedPhotoMatrix(matrix)}
+                      style={{ width: '55px', height: '55px', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--surface-elevated)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    >
                       {firstPhoto ? (
                         <img src={firstPhoto} alt="Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
@@ -232,10 +261,20 @@ export function MatricesList() {
                     </div>
                  </div>
 
-                  {/* Informação sobre Criação */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.50rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.50rem' }}>
-                     <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Cadastrado em: {creationDate}</span>
-                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Por: {creatorDisplay}</span>
+                  {/* Informação sobre Criação e GPS */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.50rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.50rem' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                       <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Cadastrado em: {creationDate}</span>
+                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Por: {creatorDisplay}</span>
+                     </div>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontFamily: 'monospace' }}>
+                           Lat: {Number(matrix.lat).toFixed(5)}, Lng: {Number(matrix.lng).toFixed(5)}
+                        </span>
+                        <button onClick={() => handleCopyCoords(matrix.lat, matrix.lng)} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', padding: '0.2rem' }} title="Copiar Coordenadas">
+                           <Copy size={14} />
+                        </button>
+                     </div>
                   </div>
 
                  {/* Observações */}
@@ -306,6 +345,16 @@ export function MatricesList() {
            })}
         </div>
       )}
+
+      <PhotoModal 
+        isOpen={!!selectedPhotoMatrix}
+        onClose={() => setSelectedPhotoMatrix(null)}
+        photos={selectedPhotoMatrix?.photos || selectedPhotoMatrix?.photoBase64s || []}
+        matrixCode={selectedPhotoMatrix?.matrixCode}
+        lat={selectedPhotoMatrix?.lat}
+        lng={selectedPhotoMatrix?.lng}
+        commonName={selectedPhotoMatrix?.commonName}
+      />
     </div>
   );
 }
