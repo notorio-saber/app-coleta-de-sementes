@@ -34,9 +34,31 @@ const redTreeIcon = new L.DivIcon({
   popupAnchor: [0, -28]
 });
 
+const userIcon = new L.DivIcon({
+  html: '<div style="width: 16px; height: 16px; background-color: #3b82f6; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);"></div>',
+  className: 'custom-user-icon',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  popupAnchor: [0, -8]
+});
+
 export function MapView() {
   const { activeTeam } = useTeam();
   const [matrices, setMatrices] = useState<any[]>([]);
+  const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setUserLoc({ lat: position.coords.latitude, lng: position.coords.longitude });
+        },
+        (err) => console.error("GPS Error Map:", err),
+        { enableHighAccuracy: true }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchMatrices() {
@@ -51,7 +73,11 @@ export function MapView() {
   }, [activeTeam]);
 
   // Center on Brazil as default if no matrices
-  const center: [number, number] = matrices.length > 0 ? [matrices[0].lat, matrices[0].lng] : [-14.2350, -51.9253];
+  const center: [number, number] = matrices.length > 0 
+    ? [matrices[0].lat, matrices[0].lng] 
+    : userLoc 
+      ? [userLoc.lat, userLoc.lng] 
+      : [-14.2350, -51.9253];
 
   return (
     <div style={{ height: 'calc(100vh - 140px)', width: '100%', borderRadius: 'var(--border-radius-md)', overflow: 'hidden' }}>
@@ -60,6 +86,16 @@ export function MapView() {
           attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
+
+        {userLoc && (
+          <Marker position={[userLoc.lat, userLoc.lng]} icon={userIcon}>
+            <Popup>
+              <div style={{ textAlign: 'center', padding: '0.2rem' }}>
+                 <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--primary-color)' }}>Sua Posição</h3>
+              </div>
+            </Popup>
+          </Marker>
+        )}
         {matrices.map(matrix => {
           let isUrgent = false;
           if (matrix.revisitDate) {
