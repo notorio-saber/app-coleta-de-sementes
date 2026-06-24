@@ -7,6 +7,8 @@ import { Download, Image as ImageIcon, MapPin, Edit, Trash2, CalendarCheck, Hist
 import { useNavigate } from 'react-router-dom';
 import { PhotoModal } from '../components/PhotoModal';
 
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 export function MatricesList() {
   const { activeTeam, userRole } = useTeam();
   const { user } = useAuth();
@@ -19,10 +21,45 @@ export function MatricesList() {
   const [filterFruiting, setFilterFruiting] = useState<string>('');
   const [selectedPhotoMatrix, setSelectedPhotoMatrix] = useState<any>(null);
 
+  const [cityFilter, setCityFilter] = useState('');
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
+
   const handleCopyCoords = (lat: number, lng: number) => {
     navigator.clipboard.writeText(`${lat}, ${lng}`);
     alert('Coordenadas copiadas!');
   };
+
+  async function populateCities(data: any[]) {
+    const cityCache = new Map<string, string>();
+    const updatedData = [...data];
+    const citiesSet = new Set<string>();
+
+    for (let i = 0; i < updatedData.length; i++) {
+      const m = updatedData[i];
+      const cacheKey = `${parseFloat(m.lat).toFixed(1)},${parseFloat(m.lng).toFixed(1)}`;
+      
+      if (!cityCache.has(cacheKey)) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${m.lat}&lon=${m.lng}&zoom=10`);
+          const geo = await res.json();
+          const city = geo.address?.city || geo.address?.town || geo.address?.village || geo.address?.municipality || 'Desconhecida';
+          cityCache.set(cacheKey, city);
+          await delay(1000);
+        } catch (e) {
+          cityCache.set(cacheKey, 'Desconhecida');
+        }
+      }
+      
+      const foundCity = cityCache.get(cacheKey) as string;
+      updatedData[i] = { ...updatedData[i], cityName: foundCity };
+      if (foundCity !== 'Desconhecida') citiesSet.add(foundCity);
+      
+      if (i % 3 === 0 || i === updatedData.length - 1) {
+        setMatrices([...updatedData]);
+        setAvailableCities(Array.from(citiesSet).sort());
+      }
+    }
+  }
 
   useEffect(() => {
     async function fetchAll() {
@@ -39,9 +76,10 @@ export function MatricesList() {
            return timeB - timeA;
         });
         setMatrices(data);
+        setLoading(false);
+        await populateCities(data);
       } catch (err) {
         console.error(err);
-      } finally {
         setLoading(false);
       }
     }
@@ -100,7 +138,7 @@ export function MatricesList() {
   const handleExportCSV = () => {
     if (matrices.length === 0) return;
 
-    const headers = ['Registro', 'Nome Comum', 'Nome Científico', 'Latitude', 'Longitude', 'Estádio Frutificação', 'Criado Por'];
+    const headers = ['Registro', 'Nome Comum', 'Nome Científico', 'Latitude', 'Longitude', 'Estádio Frutificação', 'Criado Por', 'Cidade'];
     const csvContent = [
       headers.join(','),
       ...matrices.map(m => [
@@ -110,7 +148,8 @@ export function MatricesList() {
         m.lat,
         m.lng,
         `"${m.fruitingStage || ''}"`,
-        `"${m.creatorEmail || ''}"`
+        `"${m.creatorEmail || ''}"`,
+        `"${m.cityName || ''}"`
       ].join(','))
     ].join('\n');
 
@@ -141,6 +180,11 @@ export function MatricesList() {
       return false;
     }
 
+    // 4. City filter
+    if (cityFilter !== '' && m.cityName !== cityFilter) {
+      return false;
+    }
+
     return true;
   });
 
@@ -153,18 +197,18 @@ export function MatricesList() {
       </div>
 
       <div className="card" style={{ padding: '1rem', marginBottom: '1rem' }}>
-        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
+        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
            <input 
              type="text" 
              className="input" 
-             style={{ flex: 2 }} 
-             placeholder="Pesquisar por nome..." 
+             style={{ flex: '1 1 100%' }} 
+             placeholder="Pesquisar por nome comum ou científico..." 
              value={searchTerm}
              onChange={e => setSearchTerm(e.target.value)}
            />
            <select 
              className="select" 
-             style={{ flex: 1 }}
+             style={{ flex: 1, minWidth: '130px' }}
              value={filterFruiting}
              onChange={e => setFilterFruiting(e.target.value)}
            >
@@ -174,6 +218,15 @@ export function MatricesList() {
              <option value="Frutos verdes">Frutos verdes</option>
              <option value="Quase maduros">Quase maduros</option>
              <option value="Maduros">Maduros</option>
+           </select>
+           <select 
+             className="select" 
+             style={{ flex: 1, minWidth: '130px' }}
+             value={cityFilter}
+             onChange={e => setCityFilter(e.target.value)}
+           >
+             <option value="">Todas as cidades</option>
+             {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
            </select>
         </div>
 
@@ -264,8 +317,10 @@ export function MatricesList() {
                   {/* Informação sobre Criação e GPS */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.50rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.50rem' }}>
                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                       <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Cadastrado em: {creationDate}</span>
-                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Por: {creatorDisplay}</span>
+                       <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Criado em {creationDate} por {creatorDisplay}</span>
+                       <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
+                         Cidade: {matrix.cityName || (matrix.cityName === 'Desconhecida' ? 'Não encontrada' : 'Buscando...')}
+                       </span>
                      </div>
                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontFamily: 'monospace' }}>
